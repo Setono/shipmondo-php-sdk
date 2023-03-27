@@ -19,6 +19,7 @@ use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpoint;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpointInterface;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
+use Setono\Shipmondo\Exception\NotAuthorizedException;
 use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
 
@@ -165,6 +166,7 @@ final class Client implements ClientInterface, LoggerAwareInterface
             return;
         }
 
+        NotAuthorizedException::assert($response);
         NotFoundException::assert($response);
         InternalServerErrorException::assert($response);
 
