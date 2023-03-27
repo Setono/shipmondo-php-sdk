@@ -14,12 +14,12 @@ abstract class ResponseAwareException extends \RuntimeException
     {
         $message = sprintf('The status code was: %d.', $response->getStatusCode());
 
-        $body = trim((string) $response->getBody());
+        $body = (string) $response->getBody();
         if ('' !== $body) {
             $message .= sprintf(' The body was: %s.', $body);
         }
 
-        parent::__construct(trim($message));
+        parent::__construct($message);
 
         $this->response = $response;
     }
