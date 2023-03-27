@@ -32,7 +32,7 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
         $this->logger = $logger;
     }
 
-    protected function createSourceFromResponse(ResponseInterface $response): Source
+    protected function createSource(ResponseInterface $response): Source
     {
         try {
             $collection = self::getCollection($response);
