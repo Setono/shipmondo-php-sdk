@@ -19,8 +19,6 @@ composer require setono/shipmondo-php-sdk
 ```php
 <?php
 
-use CuyZ\Valinor\Mapper\MappingError;
-use CuyZ\Valinor\Mapper\Tree\Message\Messages;
 use Setono\Shipmondo\Client\Client;
 
 require_once __DIR__ . '/../vendor/autoload.php';
