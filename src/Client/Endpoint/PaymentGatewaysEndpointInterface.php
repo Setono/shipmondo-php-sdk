@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\DTO\PaymentGateway;
-use Setono\Shipmondo\DTO\PaymentGatewayCollectionResponse;
+use Setono\Shipmondo\DTO\Collection\PaymentGatewayCollectionResponse;
+use Setono\Shipmondo\DTO\Model\PaymentGateway;
 
 interface PaymentGatewaysEndpointInterface extends EndpointInterface
 {

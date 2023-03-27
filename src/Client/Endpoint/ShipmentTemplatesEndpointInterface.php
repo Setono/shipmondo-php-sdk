@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\DTO\ShipmentTemplate;
-use Setono\Shipmondo\DTO\ShipmentTemplateCollectionResponse;
+use Setono\Shipmondo\DTO\Collection\ShipmentTemplateCollectionResponse;
+use Setono\Shipmondo\DTO\Model\ShipmentTemplate;
 
 interface ShipmentTemplatesEndpointInterface extends EndpointInterface
 {

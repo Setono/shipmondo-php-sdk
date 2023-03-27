@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\Shipmondo\DTO;
+namespace Setono\Shipmondo\DTO\Model;
 
 final class PaymentGateway
 {

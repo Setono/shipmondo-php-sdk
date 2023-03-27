@@ -38,7 +38,7 @@ foreach ($paymentGateways as $paymentGateway) {
 will output something:
 
 ```text
-Setono\Shipmondo\DTO\PaymentGateway Object
+Setono\Shipmondo\DTO\Model\PaymentGateway Object
 (
     [id] => 1234
     [name] => quickpay
@@ -57,11 +57,7 @@ When you instantiate the `Client` use the opportunity to set a cache:
 ```php
 <?php
 
-use CuyZ\Valinor\Cache\FileSystemCache;
-use CuyZ\Valinor\MapperBuilder;
-use Setono\Shipmondo\Client\Client;
-use Setono\Shipmondo\DTO\CollectionResponse;
-use Setono\Shipmondo\DTO\Box;
+use CuyZ\Valinor\Cache\FileSystemCache;use Setono\Shipmondo\Client\Client;use Setono\Shipmondo\DTO\Box;
 
 require_once '../vendor/autoload.php';
 
