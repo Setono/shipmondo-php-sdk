@@ -8,6 +8,7 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpointInterface;
+use Setono\Shipmondo\Client\Endpoint\SalesOrderEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpointInterface;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\NotFoundException;
@@ -44,6 +45,8 @@ interface ClientInterface
     public function post(string $uri, array|object $body): ResponseInterface;
 
     public function paymentGateways(): PaymentGatewaysEndpointInterface;
+
+    public function salesOrders(): SalesOrderEndpointInterface;
 
     public function shipmentTemplates(): ShipmentTemplatesEndpointInterface;
 }
