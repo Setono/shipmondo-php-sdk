@@ -66,7 +66,7 @@ $client = new Client('API_USERNAME', 'API_KEY');
 $client->getMapperBuilder()->withCache($cache);
 ```
 
-You can read more about it here: [Valinor: Performance and caching](https://valinor.cuyz.io/latest/other/performance-and-cache/).
+You can read more about it here: [Valinor: Performance and caching](https://valinor.cuyz.io/1.3/other/performance-and-caching/).
 
 [ico-version]: https://poser.pugx.org/setono/shipmondo-php-sdk/v/stable
 [ico-license]: https://poser.pugx.org/setono/shipmondo-php-sdk/license

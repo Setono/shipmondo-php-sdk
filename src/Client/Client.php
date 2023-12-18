@@ -11,11 +11,14 @@ use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpoint;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpointInterface;
+use Setono\Shipmondo\Client\Endpoint\SalesOrderEndpoint;
+use Setono\Shipmondo\Client\Endpoint\SalesOrderEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpoint;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpointInterface;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
@@ -31,11 +34,15 @@ final class Client implements ClientInterface, LoggerAwareInterface
 
     private ?PaymentGatewaysEndpointInterface $paymentGatewaysEndpoint = null;
 
+    private ?SalesOrderEndpointInterface $salesOrdersEndpoint = null;
+
     private ?ShipmentTemplatesEndpointInterface $shipmentTemplatesEndpoint = null;
 
     private ?HttpClientInterface $httpClient = null;
 
     private ?RequestFactoryInterface $requestFactory = null;
+
+    private ?StreamFactoryInterface $streamFactory = null;
 
     private LoggerInterface $logger;
 
@@ -61,7 +68,11 @@ final class Client implements ClientInterface, LoggerAwareInterface
         $request = $request->withHeader(
             'Authorization',
             sprintf('Basic %s', base64_encode($this->username . ':' . $this->apiKey)),
-        );
+        )->withHeader('Accept', 'application/json');
+
+        if (in_array($request->getMethod(), ['POST', 'PUT', 'PATCH'])) {
+            $request = $request->withHeader('Content-Type', 'application/json');
+        }
 
         $this->lastRequest = $request;
         $this->lastResponse = $this->getHttpClient()->sendRequest($this->lastRequest);
@@ -84,6 +95,21 @@ final class Client implements ClientInterface, LoggerAwareInterface
         return $this->request($request);
     }
 
+    public function post(string $uri, array|object $body): ResponseInterface
+    {
+        $url = sprintf('%s/%s', $this->getBaseUri(), ltrim($uri, '/'));
+
+        $request = $this->getRequestFactory()
+            ->createRequest('POST', $url)
+            ->withBody(
+                $this->getStreamFactory()
+                    ->createStream(json_encode($body, \JSON_THROW_ON_ERROR)),
+            )
+        ;
+
+        return $this->request($request);
+    }
+
     public function paymentGateways(): PaymentGatewaysEndpointInterface
     {
         if (null === $this->paymentGatewaysEndpoint) {
@@ -92,6 +118,16 @@ final class Client implements ClientInterface, LoggerAwareInterface
         }
 
         return $this->paymentGatewaysEndpoint;
+    }
+
+    public function salesOrders(): SalesOrderEndpointInterface
+    {
+        if (null === $this->salesOrdersEndpoint) {
+            $this->salesOrdersEndpoint = new SalesOrderEndpoint($this, $this->getMapperBuilder());
+            $this->salesOrdersEndpoint->setLogger($this->logger);
+        }
+
+        return $this->salesOrdersEndpoint;
     }
 
     public function shipmentTemplates(): ShipmentTemplatesEndpointInterface
@@ -156,6 +192,15 @@ final class Client implements ClientInterface, LoggerAwareInterface
         }
 
         return $this->requestFactory;
+    }
+
+    private function getStreamFactory(): StreamFactoryInterface
+    {
+        if (null === $this->streamFactory) {
+            $this->streamFactory = Psr17FactoryDiscovery::findStreamFactory();
+        }
+
+        return $this->streamFactory;
     }
 
     private static function assertStatusCode(ResponseInterface $response): void

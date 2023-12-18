@@ -41,6 +41,8 @@ interface ClientInterface
      */
     public function get(string $uri, array $query = []): ResponseInterface;
 
+    public function post(string $uri, array|object $body): ResponseInterface;
+
     public function paymentGateways(): PaymentGatewaysEndpointInterface;
 
     public function shipmentTemplates(): ShipmentTemplatesEndpointInterface;
