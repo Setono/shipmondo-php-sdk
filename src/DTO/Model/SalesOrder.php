@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\DTO\Model;
 
+use Setono\Shipmondo\DTO\Model\SalesOrder\OrderLine;
 use Setono\Shipmondo\DTO\Model\SalesOrder\PaymentDetails;
 
 final class SalesOrder implements \JsonSerializable
 {
     public function __construct(
         public ?string $orderId = null,
-        public ?\DateTimeImmutable $orderedAt = null,
+        public ?\DateTimeInterface $orderedAt = null,
         public ?string $sourceName = null,
         public ?string $orderNote = null,
         public bool $archived = false,
@@ -25,6 +26,9 @@ final class SalesOrder implements \JsonSerializable
         public Address $billTo = new Address(),
         public ?Address $sender = null,
         public PaymentDetails $paymentDetails = new PaymentDetails(),
+        /**
+         * @var list<OrderLine> $orderLines
+         */
         public array $orderLines = [],
     ) {
     }
