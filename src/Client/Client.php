@@ -17,8 +17,8 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpoint;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpointInterface;
-use Setono\Shipmondo\Client\Endpoint\SalesOrderEndpoint;
-use Setono\Shipmondo\Client\Endpoint\SalesOrderEndpointInterface;
+use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpoint;
+use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpoint;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpointInterface;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
@@ -34,7 +34,7 @@ final class Client implements ClientInterface, LoggerAwareInterface
 
     private ?PaymentGatewaysEndpointInterface $paymentGatewaysEndpoint = null;
 
-    private ?SalesOrderEndpointInterface $salesOrdersEndpoint = null;
+    private ?SalesOrdersEndpointInterface $salesOrdersEndpoint = null;
 
     private ?ShipmentTemplatesEndpointInterface $shipmentTemplatesEndpoint = null;
 
@@ -120,10 +120,10 @@ final class Client implements ClientInterface, LoggerAwareInterface
         return $this->paymentGatewaysEndpoint;
     }
 
-    public function salesOrders(): SalesOrderEndpointInterface
+    public function salesOrders(): SalesOrdersEndpointInterface
     {
         if (null === $this->salesOrdersEndpoint) {
-            $this->salesOrdersEndpoint = new SalesOrderEndpoint($this, $this->getMapperBuilder());
+            $this->salesOrdersEndpoint = new SalesOrdersEndpoint($this, $this->getMapperBuilder());
             $this->salesOrdersEndpoint->setLogger($this->logger);
         }
 

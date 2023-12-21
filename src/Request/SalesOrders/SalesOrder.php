@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\Shipmondo\DTO\Model;
-
-use Setono\Shipmondo\DTO\Model\SalesOrder\OrderLine;
-use Setono\Shipmondo\DTO\Model\SalesOrder\PaymentDetails;
+namespace Setono\Shipmondo\Request\SalesOrders;
 
 final class SalesOrder implements \JsonSerializable
 {

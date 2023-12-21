@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\Shipmondo\DTO\Model;
+namespace Setono\Shipmondo\Request\SalesOrders;
 
 final class Address implements \JsonSerializable
 {
