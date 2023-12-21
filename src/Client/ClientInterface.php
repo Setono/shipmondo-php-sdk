@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpointInterface;
+use Setono\Shipmondo\Client\Endpoint\WebhooksEndpointInterface;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
@@ -49,4 +50,6 @@ interface ClientInterface
     public function salesOrders(): SalesOrdersEndpointInterface;
 
     public function shipmentTemplates(): ShipmentTemplatesEndpointInterface;
+
+    public function webhooks(): WebhooksEndpointInterface;
 }

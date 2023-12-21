@@ -21,6 +21,8 @@ use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpoint;
 use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpoint;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpointInterface;
+use Setono\Shipmondo\Client\Endpoint\WebhooksEndpoint;
+use Setono\Shipmondo\Client\Endpoint\WebhooksEndpointInterface;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\NotAuthorizedException;
 use Setono\Shipmondo\Exception\NotFoundException;
@@ -37,6 +39,8 @@ final class Client implements ClientInterface, LoggerAwareInterface
     private ?SalesOrdersEndpointInterface $salesOrdersEndpoint = null;
 
     private ?ShipmentTemplatesEndpointInterface $shipmentTemplatesEndpoint = null;
+
+    private ?WebhooksEndpointInterface $webhooksEndpoint = null;
 
     private ?HttpClientInterface $httpClient = null;
 
@@ -138,6 +142,16 @@ final class Client implements ClientInterface, LoggerAwareInterface
         }
 
         return $this->shipmentTemplatesEndpoint;
+    }
+
+    public function webhooks(): WebhooksEndpointInterface
+    {
+        if (null === $this->webhooksEndpoint) {
+            $this->webhooksEndpoint = new WebhooksEndpoint($this, $this->getMapperBuilder());
+            $this->webhooksEndpoint->setLogger($this->logger);
+        }
+
+        return $this->webhooksEndpoint;
     }
 
     public function setMapperBuilder(MapperBuilder $mapperBuilder): void
