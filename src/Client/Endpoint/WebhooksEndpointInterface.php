@@ -9,5 +9,8 @@ use Setono\Shipmondo\Request\Webhooks\Webhook;
 
 interface WebhooksEndpointInterface extends EndpointInterface
 {
-    public function create(Webhook $webhook): CreateResponse;
+    /**
+     * @return list<CreateResponse>
+     */
+    public function create(Webhook $webhook): array;
 }
