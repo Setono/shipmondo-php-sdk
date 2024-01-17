@@ -9,13 +9,8 @@ use Setono\Shipmondo\Request\Webhooks\Webhook;
 
 final class WebhooksEndpoint extends Endpoint implements WebhooksEndpointInterface
 {
-    public function create(Webhook $webhook): array
+    public function create(Webhook $webhook): CreateResponse
     {
-        return $this->mapperBuilder->mapper()
-            ->map(
-                sprintf('list<%s>', CreateResponse::class),
-                $this->createSource($this->client->post('webhooks', $webhook)),
-            )
-        ;
+        return CreateResponse::fromHttpResponse($this->client->post('webhooks', $webhook));
     }
 }
