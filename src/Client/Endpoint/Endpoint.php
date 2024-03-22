@@ -15,9 +15,9 @@ use Setono\Shipmondo\Request\Query\CollectionQuery;
 use Setono\Shipmondo\Response\Collection;
 
 /**
- * @template T
+ * @template TResponse
  *
- * @implements EndpointInterface<T>
+ * @implements EndpointInterface<TResponse>
  */
 abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
 {
@@ -65,6 +65,9 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
         $this->logger = $logger;
     }
 
+    /**
+     * Takes a response and returns a Valinor Source representation
+     */
     protected function createSource(ResponseInterface $response): Source
     {
         try {

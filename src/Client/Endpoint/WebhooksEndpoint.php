@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Client\Response\SingleResourceResponse;
 use Setono\Shipmondo\Request\Query\CollectionQuery;
 use Setono\Shipmondo\Request\Webhooks\Webhook as WebhookRequest;
 use Setono\Shipmondo\Response\Collection;
+use Setono\Shipmondo\Response\SingleResourceResponse;
 use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
 
 /**

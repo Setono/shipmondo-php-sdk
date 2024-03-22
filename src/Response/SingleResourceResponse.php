@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\Shipmondo\Client\Response;
+namespace Setono\Shipmondo\Response;
 
 use Psr\Http\Message\ResponseInterface;
 use Webmozart\Assert\Assert;

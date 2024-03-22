@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Client\Response\SingleResourceResponse;
 use Setono\Shipmondo\Request\SalesOrders\SalesOrder;
+use Setono\Shipmondo\Response\SingleResourceResponse;
 
 /**
  * @extends Endpoint<SalesOrder>

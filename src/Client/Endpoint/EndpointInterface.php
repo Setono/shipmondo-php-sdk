@@ -8,12 +8,12 @@ use Setono\Shipmondo\Request\Query\CollectionQuery;
 use Setono\Shipmondo\Response\Collection;
 
 /**
- * @template T
+ * @template TResponse
  */
 interface EndpointInterface
 {
     /**
-     * @return Collection<T>
+     * @return Collection<TResponse>
      */
     public function get(CollectionQuery $query = null): Collection;
 }
