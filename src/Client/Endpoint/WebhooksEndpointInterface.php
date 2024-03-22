@@ -13,5 +13,8 @@ use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
  */
 interface WebhooksEndpointInterface extends EndpointInterface, CreatableEndpointInterface, DeletableEndpointInterface
 {
-    public function deleteAll(): void;
+    /**
+     * @param Closure(WebhookResponse):bool|null $predicate
+     */
+    public function deleteAll(\Closure $predicate = null): void;
 }

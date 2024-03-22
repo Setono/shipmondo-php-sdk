@@ -33,14 +33,14 @@ final class Collection implements \Countable, \IteratorAggregate
     }
 
     /**
-     * @param Closure(T, int):bool $p
+     * @param Closure(T):bool $predicate
      *
      * @return self<T>
      */
-    public function filter(\Closure $p): self
+    public function filter(\Closure $predicate): self
     {
         return new self(
-            array_values(array_filter($this->items, $p, \ARRAY_FILTER_USE_BOTH)),
+            array_values(array_filter($this->items, $predicate)),
             $this->page,
             $this->pageSize,
             $this->totalPages,

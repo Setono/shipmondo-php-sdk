@@ -26,9 +26,11 @@ final class WebhooksEndpoint extends Endpoint implements WebhooksEndpointInterfa
         return WebhookResponse::class;
     }
 
-    public function deleteAll(): void
+    public function deleteAll(\Closure $predicate = null): void
     {
         foreach (self::paginate($this->get(...)) as $collection) {
+            $collection = null === $predicate ? $collection : $collection->filter($predicate);
+
             foreach ($collection as $webhook) {
                 $this->delete($webhook->id);
             }
