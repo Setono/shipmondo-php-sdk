@@ -52,7 +52,7 @@ final class LiveClientTest extends TestCase
         $webhook = $webhooks->filter(fn (WebhookResponse $webhook) => $webhook->name === $webhookName)->first();
         self::assertNotFalse($webhook);
 
-        $client->webhooks()->remove($webhook->id);
+        $client->webhooks()->delete($webhook->id);
     }
 
     /**

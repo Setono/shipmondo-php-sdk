@@ -9,10 +9,10 @@ use Setono\Shipmondo\Response\Response;
 /**
  * @template TResponse of Response
  */
-interface RemovableEndpointInterface
+interface DeletableEndpointInterface
 {
     /**
      * @return TResponse
      */
-    public function remove(int $id): Response;
+    public function delete(int $id): Response;
 }

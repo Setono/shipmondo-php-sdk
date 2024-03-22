@@ -17,9 +17,9 @@ final class WebhooksEndpoint extends Endpoint implements WebhooksEndpointInterfa
     use CreatableEndpointTrait;
 
     /**
-     * @use RemovableEndpointTrait<WebhookResponse>
+     * @use DeletableEndpointTrait<WebhookResponse>
      */
-    use RemovableEndpointTrait;
+    use DeletableEndpointTrait;
 
     protected static function getResponseClass(): string
     {
@@ -30,7 +30,7 @@ final class WebhooksEndpoint extends Endpoint implements WebhooksEndpointInterfa
     {
         foreach (self::paginate($this->get(...)) as $collection) {
             foreach ($collection as $webhook) {
-                $this->remove($webhook->id);
+                $this->delete($webhook->id);
             }
         }
     }

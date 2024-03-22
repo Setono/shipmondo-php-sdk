@@ -11,12 +11,12 @@ use Setono\Shipmondo\Response\Response;
  *
  * @template TResponse of Response
  */
-trait RemovableEndpointTrait
+trait DeletableEndpointTrait
 {
     /**
      * @return TResponse
      */
-    public function remove(int $id): Response
+    public function delete(int $id): Response
     {
         return $this
             ->mapperBuilder

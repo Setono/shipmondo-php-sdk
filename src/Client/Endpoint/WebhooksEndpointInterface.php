@@ -9,9 +9,9 @@ use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
 /**
  * @extends EndpointInterface<WebhookResponse>
  * @extends CreatableEndpointInterface<WebhookResponse>
- * @extends RemovableEndpointInterface<WebhookResponse>
+ * @extends DeletableEndpointInterface<WebhookResponse>
  */
-interface WebhooksEndpointInterface extends EndpointInterface, CreatableEndpointInterface, RemovableEndpointInterface
+interface WebhooksEndpointInterface extends EndpointInterface, CreatableEndpointInterface, DeletableEndpointInterface
 {
     public function deleteAll(): void;
 }
