@@ -57,7 +57,8 @@ When you instantiate the `Client` use the opportunity to set a cache:
 ```php
 <?php
 
-use CuyZ\Valinor\Cache\FileSystemCache;use Setono\Shipmondo\Client\Client;use Setono\Shipmondo\DTO\Box;
+use CuyZ\Valinor\Cache\FileSystemCache;
+use Setono\Shipmondo\Client\Client;
 
 require_once '../vendor/autoload.php';
 
