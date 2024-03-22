@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Request\Query\CollectionQuery;
 use Setono\Shipmondo\Request\Webhooks\Webhook as WebhookRequest;
-use Setono\Shipmondo\Response\Collection;
 use Setono\Shipmondo\Response\SingleResourceResponse;
 use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
 
@@ -15,22 +13,14 @@ use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
  */
 final class WebhooksEndpoint extends Endpoint implements WebhooksEndpointInterface
 {
-    /**
-     * @return Collection<WebhookResponse>
-     */
-    public function get(CollectionQuery $query = null): Collection
+    protected static function getResponseClass(): string
     {
-        /** @var class-string<Collection<WebhookResponse>> $class */
-        $class = 'Setono\Shipmondo\Response\Collection<Setono\Shipmondo\Response\Webhooks\Webhook>';
-
-        return $this->mapperBuilder->mapper()
-            ->map($class, $this->createSource($this->client->get('webhooks', $query ?? new CollectionQuery())))
-        ;
+        return WebhookResponse::class;
     }
 
-    public function create(WebhookRequest $webhook): SingleResourceResponse
+    public function create(WebhookRequest $webhook): WebhookResponse
     {
-        return SingleResourceResponse::fromHttpResponse($this->client->post('webhooks', $webhook));
+        return $this->_create(self::getResponseClass(), $webhook);
     }
 
     public function delete(int $id): SingleResourceResponse

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Request\SalesOrders;
 
-final class SalesOrder implements \JsonSerializable
+use Setono\Shipmondo\Request\Request;
+
+final class SalesOrder extends Request
 {
     public function __construct(
         public ?string $orderId = null,

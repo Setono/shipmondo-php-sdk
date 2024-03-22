@@ -12,7 +12,9 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\ClientInterface;
 use Setono\Shipmondo\Request\Query\CollectionQuery;
+use Setono\Shipmondo\Request\Request;
 use Setono\Shipmondo\Response\Collection;
+use Setono\Shipmondo\Response\Response;
 
 /**
  * @template TResponse
@@ -31,9 +33,41 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
         $this->logger = new NullLogger();
     }
 
+    /**
+     * @return Collection<TResponse>
+     */
     public function get(CollectionQuery $query = null): Collection
     {
-        throw new \RuntimeException('Not implemented');
+        /** @var class-string<Collection<TResponse>> $class */
+        $class = 'Setono\Shipmondo\Response\Collection<' . static::getResponseClass() . '>';
+
+        return $this
+            ->mapperBuilder
+            ->mapper()
+            ->map(
+                $class,
+                $this->createSource(
+                    $this->client->get($this->endpoint, $query ?? new CollectionQuery()),
+                ),
+            );
+    }
+
+    /**
+     * @param class-string<TResponse> $class
+     *
+     * @return TResponse
+     */
+    protected function _create(string $class, Request $request): Response
+    {
+        return $this
+            ->mapperBuilder
+            ->mapper()
+            ->map(
+                $class,
+                $this->createSource(
+                    $this->client->post($this->endpoint, $request),
+                ),
+            );
     }
 
     /**
@@ -92,6 +126,16 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
 
             throw $e;
         }
+    }
+
+    /**
+     * todo make this abstract
+     *
+     * @return class-string<TResponse>
+     */
+    protected static function getResponseClass(): string
+    {
+        throw new \RuntimeException('Not implemented');
     }
 
     /**

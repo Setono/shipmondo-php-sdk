@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Request\Webhooks;
 
-final class Webhook implements \JsonSerializable
+use Setono\Shipmondo\Request\Request;
+
+final class Webhook extends Request
 {
     final public const RESOURCE_SHIPMENTS = 'Shipments';
 

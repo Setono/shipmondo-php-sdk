@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Request\SalesOrders;
 
-final class OrderLine implements \JsonSerializable
+use Setono\Shipmondo\Request\Request;
+
+final class OrderLine extends Request
 {
     public const LINE_TYPE_ITEM = 'item';
 

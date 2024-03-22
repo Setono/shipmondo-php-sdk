@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Request\SalesOrders;
 
-final class PaymentDetails implements \JsonSerializable
+use Setono\Shipmondo\Request\Request;
+
+final class PaymentDetails extends Request
 {
     public function __construct(
         public ?string $amountExcludingVat = null,

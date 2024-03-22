@@ -13,7 +13,7 @@ use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
  */
 interface WebhooksEndpointInterface extends EndpointInterface
 {
-    public function create(WebhookRequest $webhook): SingleResourceResponse;
+    public function create(WebhookRequest $webhook): WebhookResponse;
 
     public function delete(int $id): SingleResourceResponse;
 
