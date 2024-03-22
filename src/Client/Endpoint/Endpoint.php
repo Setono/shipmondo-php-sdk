@@ -17,7 +17,7 @@ use Setono\Shipmondo\Response\Collection;
 use Setono\Shipmondo\Response\Response;
 
 /**
- * @template TResponse
+ * @template TResponse of Response
  *
  * @implements EndpointInterface<TResponse>
  */
@@ -48,24 +48,6 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
                 $class,
                 $this->createSource(
                     $this->client->get($this->endpoint, $query ?? new CollectionQuery()),
-                ),
-            );
-    }
-
-    /**
-     * @param class-string<TResponse> $class
-     *
-     * @return TResponse
-     */
-    protected function _create(string $class, Request $request): Response
-    {
-        return $this
-            ->mapperBuilder
-            ->mapper()
-            ->map(
-                $class,
-                $this->createSource(
-                    $this->client->post($this->endpoint, $request),
                 ),
             );
     }

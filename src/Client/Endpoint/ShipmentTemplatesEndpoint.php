@@ -15,8 +15,8 @@ final class ShipmentTemplatesEndpoint extends Endpoint implements ShipmentTempla
     {
         return $this->mapperBuilder->mapper()
             ->map(
-                ShipmentTemplate::class,
-                $this->createSource($this->client->get('shipment_templates', ['id' => $id])),
+                self::getResponseClass(),
+                $this->createSource($this->client->get($this->endpoint, ['id' => $id])),
             )
         ;
     }

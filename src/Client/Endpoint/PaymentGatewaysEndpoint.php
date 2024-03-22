@@ -15,8 +15,8 @@ final class PaymentGatewaysEndpoint extends Endpoint implements PaymentGatewaysE
     {
         return $this->mapperBuilder->mapper()
             ->map(
-                PaymentGateway::class,
-                $this->createSource($this->client->get('payment_gateways', ['id' => $id])),
+                self::getResponseClass(),
+                $this->createSource($this->client->get($this->endpoint, ['id' => $id])),
             )
         ;
     }

@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Request\SalesOrders\SalesOrder;
-use Setono\Shipmondo\Response\SingleResourceResponse;
+use Setono\Shipmondo\Response\SalesOrders\SalesOrder as SalesOrderResponse;
 
 /**
- * @extends Endpoint<SalesOrder>
+ * @extends Endpoint<SalesOrderResponse>
  */
 final class SalesOrdersEndpoint extends Endpoint implements SalesOrdersEndpointInterface
 {
-    public function create(SalesOrder $salesOrder): SingleResourceResponse
-    {
-        return SingleResourceResponse::fromHttpResponse($this->client->post('sales_orders', $salesOrder));
-    }
+    /**
+     * @use CreatableEndpointTrait<SalesOrderResponse>
+     */
+    use CreatableEndpointTrait;
 }
