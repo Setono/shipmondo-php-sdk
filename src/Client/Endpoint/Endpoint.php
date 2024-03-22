@@ -12,7 +12,6 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\ClientInterface;
 use Setono\Shipmondo\Request\Query\CollectionQuery;
-use Setono\Shipmondo\Request\Request;
 use Setono\Shipmondo\Response\Collection;
 use Setono\Shipmondo\Response\Response;
 

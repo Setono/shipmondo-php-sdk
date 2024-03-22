@@ -35,7 +35,10 @@ final class ClientTest extends TestCase
         $client->get('/endpoint/sub', [
             'param1' => 'value 1',
             'param2' => 'value 2',
-            'date' => \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '2023-02-15 11:50:00')->setTimezone(new \DateTimeZone('UTC')),
+            'date' => (new \DateTime())
+                ->setTimezone(new \DateTimeZone('UTC'))
+                ->setDate(2023, 2, 15)
+                ->setTime(10, 50),
         ]);
 
         self::assertNotNull($httpClient->lastRequest);
