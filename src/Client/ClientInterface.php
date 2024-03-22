@@ -14,6 +14,7 @@ use Setono\Shipmondo\Client\Endpoint\WebhooksEndpointInterface;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
+use Setono\Shipmondo\Request\Query\Query;
 
 interface ClientInterface
 {
@@ -36,14 +37,18 @@ interface ClientInterface
     public function request(RequestInterface $request): ResponseInterface;
 
     /**
+     * @param Query|array<string, scalar|\Stringable|\DateTimeInterface> $query
+     *
      * @throws ClientExceptionInterface if an error happens while processing the request
      * @throws InternalServerErrorException if the server reports an internal server error
      * @throws NotFoundException if the request results in a 404
      * @throws UnexpectedStatusCodeException if the status code is not between 200 and 299, and it's not any of the above
      */
-    public function get(string $uri, array $query = []): ResponseInterface;
+    public function get(string $uri, Query|array $query = []): ResponseInterface;
 
     public function post(string $uri, array|object $body): ResponseInterface;
+
+    public function delete(string $uri, int $id): ResponseInterface;
 
     public function paymentGateways(): PaymentGatewaysEndpointInterface;
 

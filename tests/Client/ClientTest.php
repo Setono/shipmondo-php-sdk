@@ -30,11 +30,12 @@ final class ClientTest extends TestCase
 
         $client = new Client($username, $apiKey);
         $client->setHttpClient($httpClient);
+
+        /** @psalm-suppress PossiblyFalseReference */
         $client->get('/endpoint/sub', [
-            'empty' => null,
             'param1' => 'value 1',
             'param2' => 'value 2',
-            'date' => \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '2023-02-15 11:50:00'),
+            'date' => \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '2023-02-15 11:50:00')->setTimezone(new \DateTimeZone('UTC')),
         ]);
 
         self::assertNotNull($httpClient->lastRequest);
@@ -42,7 +43,7 @@ final class ClientTest extends TestCase
         self::assertNotNull($client->getLastRequest());
         self::assertSame('GET', $httpClient->lastRequest->getMethod());
         self::assertSame(
-            'https://app.shipmondo.com/api/public/v3/endpoint/sub?param1=value%201&param2=value%202&date=2023-02-15T11%3A50%3A00%2B00%3A00',
+            'https://app.shipmondo.com/api/public/v3/endpoint/sub?param1=value%201&param2=value%202&date=2023-02-15T10%3A50%3A00%2B00%3A00',
             (string) $httpClient->lastRequest->getUri(),
         );
         self::assertSame($expectedAuthorizationHeader, $httpClient->lastRequest->getHeaderLine('Authorization'));
@@ -54,7 +55,7 @@ final class ClientTest extends TestCase
     public function it_returns_same_endpoints(): void
     {
         $client = new Client('apiKey', 'apiSecret');
-        $endpoints = ['paymentGateways', 'shipmentTemplates'];
+        $endpoints = ['paymentGateways', 'shipmentTemplates', 'webhooks'];
         foreach ($endpoints as $endpoint) {
             /** @var EndpointInterface $endpointObject */
             $endpointObject = $client->{$endpoint}();

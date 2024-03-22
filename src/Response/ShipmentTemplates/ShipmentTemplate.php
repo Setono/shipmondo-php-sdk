@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\Shipmondo\DTO\Model;
+namespace Setono\Shipmondo\Response\ShipmentTemplates;
 
 // todo this is not complete with properties. See https://app.shipmondo.com/api/public/v3/specification#/operations/shipment_templates_get
 final class ShipmentTemplate

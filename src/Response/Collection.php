@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Setono\Shipmondo\DTO\Collection;
+namespace Setono\Shipmondo\Response;
 
 /**
- * todo create interface for this class
- *
  * @template T
  *
  * @implements \IteratorAggregate<int, T>
  */
-abstract class CollectionResponse implements \Countable, \IteratorAggregate
+final class Collection implements \Countable, \IteratorAggregate
 {
+    /**
+     * @param list<T> $items
+     */
     public function __construct(
-        /** @var list<T> $items */
         public readonly array $items,
         public readonly int $page,
         public readonly int $pageSize,
@@ -33,8 +33,29 @@ abstract class CollectionResponse implements \Countable, \IteratorAggregate
     }
 
     /**
-     * @return T[]
+     * @param Closure(T, int):bool $p
      *
+     * @return self<T>
+     */
+    public function filter(\Closure $p): self
+    {
+        return new self(
+            array_values(array_filter($this->items, $p, \ARRAY_FILTER_USE_BOTH)),
+            $this->page,
+            $this->pageSize,
+            $this->totalPages,
+        );
+    }
+
+    /**
+     * @return T|false
+     */
+    public function first(): mixed
+    {
+        return $this->items[0] ?? false;
+    }
+
+    /**
      * @psalm-return \ArrayIterator<int<0, max>, T>
      */
     public function getIterator(): \ArrayIterator

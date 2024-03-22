@@ -7,7 +7,7 @@ namespace Setono\Shipmondo\Client\Response;
 use Psr\Http\Message\ResponseInterface;
 use Webmozart\Assert\Assert;
 
-final class CreateResponse
+final class SingleResourceResponse
 {
     public function __construct(
         /**
@@ -27,7 +27,11 @@ final class CreateResponse
         Assert::isArray($data);
 
         if (!isset($data['id'])) {
-            throw new \InvalidArgumentException('The response does not contain an id');
+            throw new \InvalidArgumentException(sprintf(
+                'The response does not contain an id. The status code was: %d and the response was: %s',
+                $response->getStatusCode(),
+                $response->getBody()->getContents(),
+            ));
         }
 
         Assert::integer($data['id']);

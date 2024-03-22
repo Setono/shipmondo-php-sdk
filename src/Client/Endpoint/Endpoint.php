@@ -11,20 +11,53 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\ClientInterface;
+use Setono\Shipmondo\Request\Query\CollectionQuery;
+use Setono\Shipmondo\Response\Collection;
 
+/**
+ * @template T
+ *
+ * @implements EndpointInterface<T>
+ */
 abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
 {
-    protected ClientInterface $client;
-
-    protected MapperBuilder $mapperBuilder;
-
     protected LoggerInterface $logger;
 
-    public function __construct(ClientInterface $client, MapperBuilder $mapperBuilder)
-    {
-        $this->client = $client;
-        $this->mapperBuilder = $mapperBuilder;
+    public function __construct(
+        protected readonly ClientInterface $client,
+        protected readonly MapperBuilder $mapperBuilder,
+        protected readonly string $endpoint,
+    ) {
         $this->logger = new NullLogger();
+    }
+
+    public function get(CollectionQuery $query = null): Collection
+    {
+        throw new \RuntimeException('Not implemented');
+    }
+
+    /**
+     * @template TResource
+     *
+     * @param callable(CollectionQuery):Collection<TResource> $getter
+     *
+     * @return iterable<Collection<TResource>>
+     */
+    public static function paginate(callable $getter): iterable
+    {
+        $query = new CollectionQuery();
+
+        while (true) {
+            $collection = $getter($query);
+
+            if ($collection->isEmpty()) {
+                break;
+            }
+
+            $query->incrementPage();
+
+            yield $collection;
+        }
     }
 
     public function setLogger(LoggerInterface $logger): void

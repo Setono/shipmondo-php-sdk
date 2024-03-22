@@ -6,6 +6,12 @@ namespace Setono\Shipmondo\Request\Webhooks;
 
 final class Webhook implements \JsonSerializable
 {
+    final public const RESOURCE_SHIPMENTS = 'Shipments';
+
+    final public const RESOURCE_ORDERS = 'Orders';
+
+    final public const RESOURCE_SHIPMENT_MONITOR = 'Shipment Monitor';
+
     public function __construct(
         public string $name,
         public string $endpoint,

@@ -38,7 +38,7 @@ foreach ($paymentGateways as $paymentGateway) {
 will output something:
 
 ```text
-Setono\Shipmondo\DTO\Model\PaymentGateway Object
+Setono\Shipmondo\Response\PaymentGateways\PaymentGateway Object
 (
     [id] => 1234
     [name] => quickpay

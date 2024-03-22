@@ -27,6 +27,7 @@ use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\NotAuthorizedException;
 use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
+use Setono\Shipmondo\Request\Query\Query;
 
 final class Client implements ClientInterface, LoggerAwareInterface
 {
@@ -86,13 +87,18 @@ final class Client implements ClientInterface, LoggerAwareInterface
         return $this->lastResponse;
     }
 
-    public function get(string $uri, array $query = []): ResponseInterface
+    public function get(string $uri, Query|array $query = []): ResponseInterface
     {
-        $q = http_build_query(array_map(static function ($element) {
-            return $element instanceof \DateTimeInterface ? $element->format(\DATE_ATOM) : $element;
-        }, $query), '', '&', \PHP_QUERY_RFC3986);
+        if (is_array($query)) {
+            $query = new Query($query);
+        }
 
-        $url = sprintf('%s/%s%s', $this->getBaseUri(), ltrim($uri, '/'), '' === $q ? '' : '?' . $q);
+        $url = sprintf(
+            '%s/%s%s',
+            $this->getBaseUri(),
+            ltrim($uri, '/'),
+            $query->isEmpty() ? '' : '?' . $query->toString(),
+        );
 
         $request = $this->getRequestFactory()->createRequest('GET', $url);
 
@@ -114,10 +120,17 @@ final class Client implements ClientInterface, LoggerAwareInterface
         return $this->request($request);
     }
 
+    public function delete(string $uri, int $id): ResponseInterface
+    {
+        $url = sprintf('%s/%s/%d', $this->getBaseUri(), ltrim($uri, '/'), $id);
+
+        return $this->request($this->getRequestFactory()->createRequest('DELETE', $url));
+    }
+
     public function paymentGateways(): PaymentGatewaysEndpointInterface
     {
         if (null === $this->paymentGatewaysEndpoint) {
-            $this->paymentGatewaysEndpoint = new PaymentGatewaysEndpoint($this, $this->getMapperBuilder());
+            $this->paymentGatewaysEndpoint = new PaymentGatewaysEndpoint($this, $this->getMapperBuilder(), 'payment_gateways');
             $this->paymentGatewaysEndpoint->setLogger($this->logger);
         }
 
@@ -127,7 +140,7 @@ final class Client implements ClientInterface, LoggerAwareInterface
     public function salesOrders(): SalesOrdersEndpointInterface
     {
         if (null === $this->salesOrdersEndpoint) {
-            $this->salesOrdersEndpoint = new SalesOrdersEndpoint($this, $this->getMapperBuilder());
+            $this->salesOrdersEndpoint = new SalesOrdersEndpoint($this, $this->getMapperBuilder(), 'sales_orders');
             $this->salesOrdersEndpoint->setLogger($this->logger);
         }
 
@@ -137,7 +150,7 @@ final class Client implements ClientInterface, LoggerAwareInterface
     public function shipmentTemplates(): ShipmentTemplatesEndpointInterface
     {
         if (null === $this->shipmentTemplatesEndpoint) {
-            $this->shipmentTemplatesEndpoint = new ShipmentTemplatesEndpoint($this, $this->getMapperBuilder());
+            $this->shipmentTemplatesEndpoint = new ShipmentTemplatesEndpoint($this, $this->getMapperBuilder(), 'shipment_templates');
             $this->shipmentTemplatesEndpoint->setLogger($this->logger);
         }
 
@@ -147,7 +160,7 @@ final class Client implements ClientInterface, LoggerAwareInterface
     public function webhooks(): WebhooksEndpointInterface
     {
         if (null === $this->webhooksEndpoint) {
-            $this->webhooksEndpoint = new WebhooksEndpoint($this, $this->getMapperBuilder());
+            $this->webhooksEndpoint = new WebhooksEndpoint($this, $this->getMapperBuilder(), 'webhooks');
             $this->webhooksEndpoint->setLogger($this->logger);
         }
 
