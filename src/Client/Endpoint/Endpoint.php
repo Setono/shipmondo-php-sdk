@@ -110,34 +110,28 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
     }
 
     /**
-     * todo make this abstract
-     *
      * @return class-string<TResponse>
      */
-    protected static function getResponseClass(): string
-    {
-        throw new \RuntimeException('Not implemented');
-    }
+    abstract protected static function getResponseClass(): string;
 
     /**
      * Returns null if the response is not a collection
      *
-     * @return ?array{page: int, pageSize: int, totalCount: int, totalPages: int, items: mixed}
+     * @return array{page: int, pageSize: int, totalCount: int, totalPages: int, items: mixed}|null
      */
     private static function getCollection(ResponseInterface $response): ?array
     {
-        $ret = [
-            'page' => (int) $response->getHeaderLine('X-Current-Page'),
+        $page = (int) $response->getHeaderLine('X-Current-Page');
+        if (0 === $page) {
+            return null;
+        }
+
+        return [
+            'page' => $page,
             'pageSize' => (int) $response->getHeaderLine('X-Per-Page'),
             'totalCount' => (int) $response->getHeaderLine('X-Total-Count'),
             'totalPages' => (int) $response->getHeaderLine('X-Total-Pages'),
             'items' => json_decode((string) $response->getBody(), true, 512, \JSON_THROW_ON_ERROR),
         ];
-
-        if (0 === $ret['page']) {
-            return null;
-        }
-
-        return $ret;
     }
 }

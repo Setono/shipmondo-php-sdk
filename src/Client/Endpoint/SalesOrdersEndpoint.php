@@ -15,4 +15,9 @@ final class SalesOrdersEndpoint extends Endpoint implements SalesOrdersEndpointI
      * @use CreatableEndpointTrait<SalesOrderResponse>
      */
     use CreatableEndpointTrait;
+
+    protected static function getResponseClass(): string
+    {
+        return SalesOrderResponse::class;
+    }
 }
