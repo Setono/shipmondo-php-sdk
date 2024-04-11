@@ -31,7 +31,7 @@ final class Address extends Request
             'attention' => $this->attention,
             'address1' => $this->address1,
             'address2' => $this->address2,
-            'zip_code' => $this->zipCode,
+            'zipcode' => $this->zipCode,
             'city' => $this->city,
             'country_code' => $this->countryCode,
             'vat_id' => $this->vatId,
