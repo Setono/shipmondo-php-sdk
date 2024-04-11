@@ -71,7 +71,7 @@ You can read more about it here: [Valinor: Performance and caching](https://vali
 
 [ico-version]: https://poser.pugx.org/setono/shipmondo-php-sdk/v/stable
 [ico-license]: https://poser.pugx.org/setono/shipmondo-php-sdk/license
-[ico-github-actions]: https://github.com/Setono/shipmondo-php-sdk/workflows/build/badge.svg
+[ico-github-actions]: https://github.com/Setono/shipmondo-php-sdk/actions/workflows/build.yaml/badge.svg
 [ico-code-coverage]: https://codecov.io/gh/Setono/shipmondo-php-sdk/graph/badge.svg
 [ico-infection]: https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2FSetono%2Fshipmondo-php-sdk%2Fmaster
 
