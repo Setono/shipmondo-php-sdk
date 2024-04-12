@@ -56,9 +56,9 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
      *
      * @param callable(CollectionQuery):Collection<TResource> $getter
      *
-     * @return iterable<Collection<TResource>>
+     * @return \Generator<array-key, Collection<TResource>>
      */
-    public static function paginate(callable $getter): iterable
+    public static function paginate(callable $getter): \Generator
     {
         $query = new CollectionQuery();
 
