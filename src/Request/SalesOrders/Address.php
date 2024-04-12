@@ -26,7 +26,7 @@ final class Address extends Request
 
     public function jsonSerialize(): array
     {
-        return array_filter([
+        return self::filter([
             'name' => $this->name,
             'attention' => $this->attention,
             'address1' => $this->address1,

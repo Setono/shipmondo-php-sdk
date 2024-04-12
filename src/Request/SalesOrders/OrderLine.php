@@ -41,7 +41,7 @@ final class OrderLine extends Request
 
     public function jsonSerialize(): array
     {
-        return array_filter([
+        return self::filter([
             'line_type' => $this->lineType,
             'item_name' => $this->itemName,
             'item_sku' => $this->itemSku,

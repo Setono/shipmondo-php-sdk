@@ -37,7 +37,7 @@ final class SalesOrder extends Request
      */
     public function jsonSerialize(): array
     {
-        return array_filter([
+        return self::filter([
             'order_id' => $this->orderId,
             'ordered_at' => $this->orderedAt?->format(\DATE_ATOM),
             'source_name' => $this->sourceName,

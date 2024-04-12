@@ -26,7 +26,7 @@ final class PaymentDetails extends Request
      */
     public function jsonSerialize(): array
     {
-        return array_filter([
+        return self::filter([
             'amount_excluding_vat' => $this->amountExcludingVat,
             'amount_including_vat' => $this->amountIncludingVat,
             'authorized_amount' => $this->authorizedAmount,
