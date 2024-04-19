@@ -21,7 +21,7 @@ final class ShipmentTemplateResolverTest extends TestCase
      */
     public function it_resolves(Shipment $shipment, array $shipmentTemplates, ShipmentTemplate $expectedShipmentTemplate): void
     {
-        $resolver = new ShipmentTemplateResolver(new SimilarTextBasedShipmentsResemblanceChecker(10));
+        $resolver = new ShipmentTemplateResolver();
         self::assertEquals($expectedShipmentTemplate, $resolver->resolve($shipment, $shipmentTemplates));
     }
 
@@ -34,7 +34,7 @@ final class ShipmentTemplateResolverTest extends TestCase
      */
     public function it_does_not_resolve(Shipment $shipment, array $shipmentTemplates): void
     {
-        $resolver = new ShipmentTemplateResolver(new SimilarTextBasedShipmentsResemblanceChecker(10));
+        $resolver = new ShipmentTemplateResolver();
         self::assertNull($resolver->resolve($shipment, $shipmentTemplates));
     }
 
@@ -197,23 +197,6 @@ final class ShipmentTemplateResolverTest extends TestCase
                 new ShipmentTemplate(
                     id: 1,
                     name: 'PostNord',
-                    sender: new Sender('DK'),
-                    receiver: new Receiver('DK'),
-                ),
-            ],
-        ];
-
-        yield 'no matching name' => [
-            new Shipment(
-                shippingMethod: 'GLS',
-                senderCountry: 'DK',
-                receiverCountry: 'DK',
-                weight: 100,
-            ),
-            [
-                new ShipmentTemplate(
-                    id: 1,
-                    name: 'DAO',
                     sender: new Sender('DK'),
                     receiver: new Receiver('DK'),
                 ),

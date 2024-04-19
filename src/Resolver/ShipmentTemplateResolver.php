@@ -8,10 +8,6 @@ use Setono\Shipmondo\Response\ShipmentTemplates\ShipmentTemplate;
 
 final class ShipmentTemplateResolver implements ShipmentTemplateResolverInterface
 {
-    public function __construct(private readonly ShipmentsResemblanceCheckerInterface $shipmentsResemblanceChecker)
-    {
-    }
-
     /**
      * For each shipment template we first check if it supports the shipment.
      * If it does, we check if it is the best match based on the weight it supports.
@@ -51,10 +47,6 @@ final class ShipmentTemplateResolver implements ShipmentTemplateResolverInterfac
         }
 
         if ($shipmentTemplate->receiver->countryCode !== $shipment->receiverCountry) {
-            return false;
-        }
-
-        if (!$this->shipmentsResemblanceChecker->compares($shipment->shippingMethod, $shipmentTemplate->name)) {
             return false;
         }
 
