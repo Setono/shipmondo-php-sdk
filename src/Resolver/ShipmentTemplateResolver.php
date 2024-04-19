@@ -12,17 +12,33 @@ final class ShipmentTemplateResolver implements ShipmentTemplateResolverInterfac
     {
     }
 
-    public function resolve(Shipment $shipment, array $shipmentTemplates): array
+    /**
+     * For each shipment template we first check if it supports the shipment.
+     * If it does, we check if it is the best match based on the weight it supports.
+     * The shipment template where the supported weight is closest to the shipment weight is returned.
+     */
+    public function resolve(Shipment $shipment, array $shipmentTemplates): ?ShipmentTemplate
     {
-        $supportingShipmentTemplates = [];
+        $supportedShipmentTemplate = null;
+        $weightDiff = \PHP_INT_MAX;
 
         foreach ($shipmentTemplates as $shipmentTemplate) {
-            if ($this->supportsShipment($shipment, $shipmentTemplate)) {
-                $supportingShipmentTemplates[] = $shipmentTemplate;
+            if (!$this->supportsShipment($shipment, $shipmentTemplate)) {
+                continue;
+            }
+
+            if (null === $supportedShipmentTemplate) {
+                $supportedShipmentTemplate = $shipmentTemplate;
+            }
+
+            $newWeightDiff = abs($shipmentTemplate->getTotalSupportedWeight() - $shipment->weight);
+            if ($newWeightDiff < $weightDiff) {
+                $supportedShipmentTemplate = $shipmentTemplate;
+                $weightDiff = $newWeightDiff;
             }
         }
 
-        return $supportingShipmentTemplates;
+        return $supportedShipmentTemplate;
     }
 
     /**

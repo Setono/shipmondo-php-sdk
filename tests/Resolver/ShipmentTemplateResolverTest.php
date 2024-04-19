@@ -19,10 +19,10 @@ final class ShipmentTemplateResolverTest extends TestCase
      *
      * @param list<ShipmentTemplate> $shipmentTemplates
      */
-    public function it_resolves(Shipment $shipment, array $shipmentTemplates, array $expectedShipmentTemplates): void
+    public function it_resolves(Shipment $shipment, array $shipmentTemplates, ShipmentTemplate $expectedShipmentTemplate): void
     {
         $resolver = new ShipmentTemplateResolver(new SimilarTextBasedShipmentsResemblanceChecker(10));
-        self::assertEquals($expectedShipmentTemplates, $resolver->resolve($shipment, $shipmentTemplates));
+        self::assertEquals($expectedShipmentTemplate, $resolver->resolve($shipment, $shipmentTemplates));
     }
 
     /**
@@ -35,11 +35,11 @@ final class ShipmentTemplateResolverTest extends TestCase
     public function it_does_not_resolve(Shipment $shipment, array $shipmentTemplates): void
     {
         $resolver = new ShipmentTemplateResolver(new SimilarTextBasedShipmentsResemblanceChecker(10));
-        self::assertEmpty($resolver->resolve($shipment, $shipmentTemplates));
+        self::assertNull($resolver->resolve($shipment, $shipmentTemplates));
     }
 
     /**
-     * @return \Generator<string, array{Shipment, list<ShipmentTemplate>, list<ShipmentTemplate>}>
+     * @return \Generator<string, array{Shipment, list<ShipmentTemplate>, ShipmentTemplate}>
      */
     public function resolvableShipments(): \Generator
     {
@@ -59,15 +59,13 @@ final class ShipmentTemplateResolverTest extends TestCase
                     parcels: [new Parcel(1, weight: 100)],
                 ),
             ],
-            [
-                new ShipmentTemplate(
-                    id: 1,
-                    name: 'GLS',
-                    sender: new Sender('DK'),
-                    receiver: new Receiver('DK'),
-                    parcels: [new Parcel(1, weight: 100)],
-                ),
-            ],
+            new ShipmentTemplate(
+                id: 1,
+                name: 'GLS',
+                sender: new Sender('DK'),
+                receiver: new Receiver('DK'),
+                parcels: [new Parcel(1, weight: 100)],
+            ),
         ];
 
         yield 'resolvable with multiple parcels' => [
@@ -87,15 +85,13 @@ final class ShipmentTemplateResolverTest extends TestCase
                     parcels: [new Parcel(2, weight: 50)],
                 ),
             ],
-            [
-                new ShipmentTemplate(
-                    id: 1,
-                    name: 'GLS',
-                    sender: new Sender('DK'),
-                    receiver: new Receiver('DK'),
-                    parcels: [new Parcel(2, weight: 50)],
-                ),
-            ],
+            new ShipmentTemplate(
+                id: 1,
+                name: 'GLS',
+                sender: new Sender('DK'),
+                receiver: new Receiver('DK'),
+                parcels: [new Parcel(2, weight: 50)],
+            ),
         ];
 
         yield 'resolvable with multiple parcels 2' => [
@@ -115,6 +111,23 @@ final class ShipmentTemplateResolverTest extends TestCase
                     parcels: [new Parcel(1, weight: 50), new Parcel(1, weight: 75)],
                 ),
             ],
+            new ShipmentTemplate(
+                id: 1,
+                name: 'GLS',
+                sender: new Sender('DK'),
+                receiver: new Receiver('DK'),
+                parcels: [new Parcel(1, weight: 50), new Parcel(1, weight: 75)],
+            ),
+        ];
+
+        yield 'resolvable with multiple supporting shipment templates' => [
+            new Shipment(
+                shippingMethod: 'GLS',
+                senderCountry: 'DK',
+                receiverCountry: 'DK',
+                weight: 100,
+                divisible: true,
+            ),
             [
                 new ShipmentTemplate(
                     id: 1,
@@ -123,7 +136,21 @@ final class ShipmentTemplateResolverTest extends TestCase
                     receiver: new Receiver('DK'),
                     parcels: [new Parcel(1, weight: 50), new Parcel(1, weight: 75)],
                 ),
+                new ShipmentTemplate(
+                    id: 2,
+                    name: 'GLS',
+                    sender: new Sender('DK'),
+                    receiver: new Receiver('DK'),
+                    parcels: [new Parcel(1, weight: 50), new Parcel(1, weight: 50)],
+                ),
             ],
+            new ShipmentTemplate(
+                id: 2,
+                name: 'GLS',
+                sender: new Sender('DK'),
+                receiver: new Receiver('DK'),
+                parcels: [new Parcel(1, weight: 50), new Parcel(1, weight: 50)],
+            ),
         ];
     }
 

@@ -17,4 +17,25 @@ final class ShipmentTemplate extends Response
         public readonly array $parcels = [],
     ) {
     }
+
+    public function getTotalSupportedWeight(): int
+    {
+        $totalWeight = null;
+
+        foreach ($this->parcels as $parcel) {
+            // We presume that when the weight is null the parcel can carry any weight
+            if (null === $parcel->weight) {
+                return \PHP_INT_MAX;
+            }
+
+            if (null === $totalWeight) {
+                $totalWeight = 0;
+            }
+
+            $totalWeight += $parcel->quantity * $parcel->weight;
+        }
+
+        // We presume that when there are no parcels the shipment can carry any weight
+        return $totalWeight ?? \PHP_INT_MAX;
+    }
 }

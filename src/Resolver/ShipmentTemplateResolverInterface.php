@@ -9,11 +9,9 @@ use Setono\Shipmondo\Response\ShipmentTemplates\ShipmentTemplate;
 interface ShipmentTemplateResolverInterface
 {
     /**
-     * From the given list of shipment templates, the method will return the shipment templates that supports the given shipment
+     * From the given list of shipment templates, the method will return the best supporting shipment template or null if none are supporting
      *
      * @param list<ShipmentTemplate> $shipmentTemplates
-     *
-     * @return list<ShipmentTemplate>
      */
-    public function resolve(Shipment $shipment, array $shipmentTemplates): array;
+    public function resolve(Shipment $shipment, array $shipmentTemplates): ?ShipmentTemplate;
 }
