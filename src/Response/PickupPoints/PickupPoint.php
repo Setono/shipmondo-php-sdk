@@ -18,6 +18,7 @@ final class PickupPoint extends Response
          * We need to spell this wrong because Shipmondo spelled it wrong in the response
          */
         public readonly string $zipcode,
+        public readonly string $city,
         /**
          * @var list<string> $openingHours
          */
