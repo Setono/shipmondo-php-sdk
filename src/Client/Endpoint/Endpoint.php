@@ -87,7 +87,11 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
     protected function createSource(ResponseInterface $response): Source
     {
         try {
-            $data = json_decode((string) $response->getBody(), true, 512, \JSON_THROW_ON_ERROR);
+            $data = json_decode(
+                json: (string) $response->getBody(),
+                associative: true,
+                flags: \JSON_THROW_ON_ERROR,
+            );
             Assert::isArray($data);
 
             if (array_is_list($data)) {
