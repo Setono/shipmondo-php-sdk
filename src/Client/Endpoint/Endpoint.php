@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\ClientInterface;
 use Setono\Shipmondo\Request\Query\CollectionQuery;
+use Setono\Shipmondo\Request\Query\Query;
 use Setono\Shipmondo\Response\Collection;
 use Setono\Shipmondo\Response\Response;
 use Webmozart\Assert\Assert;
@@ -36,7 +37,7 @@ abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
     /**
      * @return Collection<TResponse>
      */
-    public function get(CollectionQuery $query = null): Collection
+    public function get(Query $query = null): Collection
     {
         /** @var class-string<Collection<TResponse>> $class */
         $class = 'Setono\Shipmondo\Response\Collection<' . static::getResponseClass() . '>';
