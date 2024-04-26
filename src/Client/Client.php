@@ -17,6 +17,8 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpoint;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpointInterface;
+use Setono\Shipmondo\Client\Endpoint\PickupPointsEndpoint;
+use Setono\Shipmondo\Client\Endpoint\PickupPointsEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpoint;
 use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpoint;
@@ -36,6 +38,8 @@ final class Client implements ClientInterface, LoggerAwareInterface
     private ?ResponseInterface $lastResponse = null;
 
     private ?PaymentGatewaysEndpointInterface $paymentGatewaysEndpoint = null;
+
+    private ?PickupPointsEndpointInterface $pickupPointsEndpoint = null;
 
     private ?SalesOrdersEndpointInterface $salesOrdersEndpoint = null;
 
@@ -135,6 +139,16 @@ final class Client implements ClientInterface, LoggerAwareInterface
         }
 
         return $this->paymentGatewaysEndpoint;
+    }
+
+    public function pickupPoints(): PickupPointsEndpointInterface
+    {
+        if (null === $this->pickupPointsEndpoint) {
+            $this->pickupPointsEndpoint = new PickupPointsEndpoint($this, $this->getMapperBuilder(), 'pickup_points');
+            $this->pickupPointsEndpoint->setLogger($this->logger);
+        }
+
+        return $this->pickupPointsEndpoint;
     }
 
     public function salesOrders(): SalesOrdersEndpointInterface
