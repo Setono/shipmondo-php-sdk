@@ -8,6 +8,7 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Setono\Shipmondo\Client\Endpoint\PaymentGatewaysEndpointInterface;
+use Setono\Shipmondo\Client\Endpoint\PickupPointsEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpointInterface;
 use Setono\Shipmondo\Client\Endpoint\WebhooksEndpointInterface;
@@ -51,6 +52,8 @@ interface ClientInterface
     public function delete(string $uri, int $id): ResponseInterface;
 
     public function paymentGateways(): PaymentGatewaysEndpointInterface;
+
+    public function pickupPoints(): PickupPointsEndpointInterface;
 
     public function salesOrders(): SalesOrdersEndpointInterface;
 

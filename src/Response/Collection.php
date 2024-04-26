@@ -11,15 +11,20 @@ namespace Setono\Shipmondo\Response;
  */
 final class Collection implements \Countable, \IteratorAggregate
 {
+    public readonly int $page;
+
+    public readonly int $pageSize;
+
+    public readonly int $totalPages;
+
     /**
      * @param list<T> $items
      */
-    public function __construct(
-        public readonly array $items,
-        public readonly int $page,
-        public readonly int $pageSize,
-        public readonly int $totalPages,
-    ) {
+    public function __construct(public readonly array $items, int $page = null, int $pageSize = null, int $totalPages = null)
+    {
+        $this->page = $page ?? 1;
+        $this->pageSize = $pageSize ?? count($items);
+        $this->totalPages = $totalPages ?? 1;
     }
 
     public function count(): int
