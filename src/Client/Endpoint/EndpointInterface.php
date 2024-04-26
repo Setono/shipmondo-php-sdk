@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Request\Query\CollectionQuery;
+use Setono\Shipmondo\Request\Query\Query;
 use Setono\Shipmondo\Response\Collection;
 use Setono\Shipmondo\Response\Response;
 
@@ -16,5 +16,5 @@ interface EndpointInterface
     /**
      * @return Collection<TResponse>
      */
-    public function get(CollectionQuery $query = null): Collection;
+    public function get(Query $query = null): Collection;
 }
