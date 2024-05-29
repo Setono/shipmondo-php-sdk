@@ -25,6 +25,7 @@ final class SalesOrder extends Request
         public Address $billTo = new Address(),
         public ?Address $sender = null,
         public PaymentDetails $paymentDetails = new PaymentDetails(),
+        public ?ServicePoint $servicePoint = null,
         /**
          * @var list<OrderLine> $orderLines
          */
@@ -54,6 +55,7 @@ final class SalesOrder extends Request
             'bill_to' => $this->billTo,
             'sender' => $this->sender,
             'payment_details' => $this->paymentDetails,
+            'service_point' => $this->servicePoint,
             'order_lines' => $this->orderLines,
         ]);
     }
