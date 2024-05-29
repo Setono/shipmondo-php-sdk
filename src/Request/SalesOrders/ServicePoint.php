@@ -12,10 +12,10 @@ final class ServicePoint extends Request
         public readonly string $id,
         public readonly string $name,
         public readonly string $address1,
-        public readonly string $address2,
         public readonly string $zipCode,
         public readonly string $city,
         public readonly string $countryCode,
+        public readonly ?string $address2,
     ) {
     }
 
