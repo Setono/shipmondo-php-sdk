@@ -19,6 +19,7 @@ final class PickupPoint extends Response
          */
         public readonly string $zipcode,
         public readonly string $city,
+        public readonly string $country,
         /**
          * @var list<string> $openingHours
          */
