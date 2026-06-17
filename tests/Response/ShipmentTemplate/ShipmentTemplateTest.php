@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Response\ShipmentTemplate;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ShipmentTemplate::class)]
 final class ShipmentTemplateTest extends TestCase
 {
     /**

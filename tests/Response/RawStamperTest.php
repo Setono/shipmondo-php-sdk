@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Response;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Setono\Shipmondo\Response\ShipmentTemplate\Parcel;
@@ -12,7 +11,6 @@ use Setono\Shipmondo\Response\ShipmentTemplate\Receiver;
 use Setono\Shipmondo\Response\ShipmentTemplate\Sender;
 use Setono\Shipmondo\Response\ShipmentTemplate\ShipmentTemplate;
 
-#[CoversClass(RawStamper::class)]
 final class RawStamperTest extends TestCase
 {
     #[Test]

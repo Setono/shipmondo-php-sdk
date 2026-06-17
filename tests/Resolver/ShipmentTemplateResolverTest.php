@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Resolver;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +12,6 @@ use Setono\Shipmondo\Response\ShipmentTemplate\Receiver;
 use Setono\Shipmondo\Response\ShipmentTemplate\Sender;
 use Setono\Shipmondo\Response\ShipmentTemplate\ShipmentTemplate;
 
-#[CoversClass(ShipmentTemplateResolver::class)]
 final class ShipmentTemplateResolverTest extends TestCase
 {
     /**

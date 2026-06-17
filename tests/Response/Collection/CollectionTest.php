@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Response\Collection;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Collection::class)]
 final class CollectionTest extends TestCase
 {
     #[Test]
