@@ -9,7 +9,8 @@ use Setono\Shipmondo\Response\SalesOrders\SalesOrder as SalesOrderResponse;
 /**
  * @extends EndpointInterface<SalesOrderResponse>
  * @extends CreatableEndpointInterface<SalesOrderResponse>
+ * @extends ReadableEndpointInterface<SalesOrderResponse>
  */
-interface SalesOrdersEndpointInterface extends EndpointInterface, CreatableEndpointInterface
+interface SalesOrdersEndpointInterface extends EndpointInterface, CreatableEndpointInterface, ReadableEndpointInterface
 {
 }

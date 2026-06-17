@@ -57,6 +57,8 @@ final class Client implements ClientInterface, LoggerAwareInterface
 
     private ?MapperBuilder $mapperBuilder = null;
 
+    private bool $debug = false;
+
     public function __construct(private readonly string $username, private readonly string $apiKey)
     {
         $this->logger = new NullLogger();
@@ -212,9 +214,17 @@ final class Client implements ClientInterface, LoggerAwareInterface
         $this->logger = $logger;
     }
 
+    public function setDebug(bool $debug): void
+    {
+        $this->debug = $debug;
+    }
+
     private function getBaseUri(): string
     {
-        return 'https://app.shipmondo.com/api/public/v3';
+        return sprintf(
+            'https://%s.shipmondo.com/api/public/v3',
+            $this->debug ? 'sandbox' : 'app',
+        );
     }
 
     private function getHttpClient(): HttpClientInterface

@@ -6,7 +6,6 @@ namespace Setono\Shipmondo\Response;
 
 /**
  * @template T
- *
  * @implements \IteratorAggregate<int, T>
  */
 final class Collection implements \Countable, \IteratorAggregate

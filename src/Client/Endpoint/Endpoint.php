@@ -19,7 +19,6 @@ use Webmozart\Assert\Assert;
 
 /**
  * @template TResponse of Response
- *
  * @implements EndpointInterface<TResponse>
  */
 abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
