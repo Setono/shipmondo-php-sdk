@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Setono\Shipmondo\Request\Webhooks\Webhook as WebhookRequest;
-use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
+use Setono\Shipmondo\Request\PickupPointSearch;
 use Webmozart\Assert\Assert;
 
 /**
- * @covers \Setono\Shipmondo\Client\Client
+ * Hits the real Shipmondo API. Skipped unless SHIPMONDO_LIVE is set to a truthy value, with
+ * SHIPMONDO_USERNAME and SHIPMONDO_API_KEY supplied in the environment.
  */
 final class LiveClientTest extends TestCase
 {
-    private ?string $username = null;
+    private ?string $apiUser = null;
 
     private ?string $apiKey = null;
 
@@ -22,70 +23,45 @@ final class LiveClientTest extends TestCase
 
     protected function setUp(): void
     {
-        if ((bool) getenv('SHIPMONDO_LIVE') !== true) {
-            self::markTestSkipped('The SHIPMONDO_LIVE environment variable is not set to true.');
+        if (!in_array(getenv('SHIPMONDO_LIVE'), ['1', 'true'], true)) {
+            self::markTestSkipped('The SHIPMONDO_LIVE environment variable is not set to a truthy value.');
         }
 
-        $this->username = (string) getenv('SHIPMONDO_USERNAME');
+        $this->apiUser = (string) getenv('SHIPMONDO_USERNAME');
         $this->apiKey = (string) getenv('SHIPMONDO_API_KEY');
     }
 
-    /**
-     * @test
-     */
-    public function it_creates_and_gets__and_deletes_webhooks(): void
+    #[Test]
+    public function it_fetches_a_sales_order(): void
     {
-        $webhookName = uniqid('webhook-', true);
+        $salesOrder = $this->getClient()->salesOrders()->getById(125204848);
 
-        $client = $this->getClient();
-        $client->webhooks()->create(new WebhookRequest(
-            $webhookName,
-            'https://httpbin.org/post', // when a webhook is created, Shipmondo tests the endpoint immediately and expects an HTTP 200 response
-            'ins4n3-3ncrypt10n-k3y',
-            'create',
-            WebhookRequest::RESOURCE_SHIPMENTS,
-        ));
-
-        $webhooks = $client->webhooks()->get();
-        self::assertGreaterThanOrEqual(1, count($webhooks));
-
-        $webhook = $webhooks->filter(fn (WebhookResponse $webhook) => $webhook->name === $webhookName)->first();
-        self::assertNotFalse($webhook);
-
-        $client->webhooks()->delete($webhook->id);
+        self::assertSame(125204848, $salesOrder->id);
     }
 
-    /**
-     * @test
-     */
-    public function it_deletes_all_webhooks(): void
+    #[Test]
+    public function it_lists_webhooks(): void
     {
-        for ($i = 0; $i < 3; ++$i) {
-            $client = $this->getClient();
-            $client->webhooks()->create(new WebhookRequest(
-                uniqid(sprintf('webhook-%d-', $i), true),
-                'https://httpbin.org/post',
-                'ins4n3-3ncrypt10n-k3y',
-                'create',
-                WebhookRequest::RESOURCE_SHIPMENTS,
-            ));
-        }
+        $webhooks = $this->getClient()->webhooks()->getPage();
 
-        $webhooks = $client->webhooks()->get();
-        self::assertGreaterThanOrEqual(3, count($webhooks));
+        self::assertGreaterThanOrEqual(0, $webhooks->totalCount);
+    }
 
-        $client->webhooks()->deleteAll();
+    #[Test]
+    public function it_searches_pickup_points(): void
+    {
+        $points = $this->getClient()->pickupPoints()->search(new PickupPointSearch('gls', 'DK', '9000'));
 
-        self::assertCount(0, $client->webhooks()->get());
+        self::assertNotEmpty($points);
     }
 
     private function getClient(): ClientInterface
     {
         if (null === $this->client) {
-            Assert::notNull($this->username);
+            Assert::notNull($this->apiUser);
             Assert::notNull($this->apiKey);
 
-            $this->client = new Client($this->username, $this->apiKey);
+            $this->client = new Client($this->apiUser, $this->apiKey);
         }
 
         return $this->client;

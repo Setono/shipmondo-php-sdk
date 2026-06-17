@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Config\RectorConfig;
+use Rector\Php81\Rector\Property\ReadOnlyPropertyRector;
 use Rector\Set\ValueObject\LevelSetList;
 
 return static function (RectorConfig $rectorConfig): void {
@@ -16,6 +17,16 @@ return static function (RectorConfig $rectorConfig): void {
     ]);
 
     $rectorConfig->sets([
-        LevelSetList::UP_TO_PHP_81
+        LevelSetList::UP_TO_PHP_81,
+    ]);
+
+    $rectorConfig->skip([
+        // Entry-point Response DTOs stamp `$raw` after Valinor mapping, so the inherited
+        // property must stay writable; request `Payload` DTOs are deliberately mutable for the
+        // fromResponse() read-modify-write flow.
+        ReadOnlyPropertyRector::class => [
+            __DIR__ . '/src/Response',
+            __DIR__ . '/src/Request',
+        ],
     ]);
 };

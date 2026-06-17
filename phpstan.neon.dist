@@ -1,0 +1,15 @@
+includes:
+    # Valinor 2.x ships PHPStan extensions: type inference for mapper()->map() and the
+    # normalizer, plus an opt-in extension that suppresses purity errors on
+    # registerConverter / registerTransformer / registerConstructor / infer. Valinor declares
+    # those parameters pure-callable; our remaining registrations (the Payload null-stripper /
+    # snake_case-key closure in Payload::registerNormalizerTransformers()) are pure in practice,
+    # but PHPStan cannot prove it.
+    - vendor/cuyz/valinor/qa/PHPStan/valinor-phpstan-configuration.php
+    - vendor/cuyz/valinor/qa/PHPStan/valinor-phpstan-suppress-pure-errors.php
+
+parameters:
+    level: max
+    paths:
+        - src
+        - tests

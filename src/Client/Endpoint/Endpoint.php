@@ -4,131 +4,91 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use CuyZ\Valinor\Mapper\Source\Source;
+use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\MapperBuilder;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Setono\Shipmondo\Client\ClientInterface;
-use Setono\Shipmondo\Request\Query\CollectionQuery;
-use Setono\Shipmondo\Request\Query\Query;
-use Setono\Shipmondo\Response\Collection;
-use Setono\Shipmondo\Response\Response;
-use Webmozart\Assert\Assert;
+use Setono\Shipmondo\Exception\MappingException;
+use Setono\Shipmondo\Response\RawStamper;
+use Setono\Shipmondo\Response\Resource;
 
-/**
- * @template TResponse of Response
- * @implements EndpointInterface<TResponse>
- */
-abstract class Endpoint implements EndpointInterface, LoggerAwareInterface
+abstract class Endpoint
 {
-    protected LoggerInterface $logger;
-
     public function __construct(
         protected readonly ClientInterface $client,
         protected readonly MapperBuilder $mapperBuilder,
-        protected readonly string $endpoint,
     ) {
-        $this->logger = new NullLogger();
     }
 
     /**
-     * @return Collection<TResponse>
-     */
-    public function get(Query $query = null): Collection
-    {
-        /** @var class-string<Collection<TResponse>> $class */
-        $class = 'Setono\Shipmondo\Response\Collection<' . static::getResponseClass() . '>';
-
-        return $this
-            ->mapperBuilder
-            ->mapper()
-            ->map(
-                $class,
-                $this->createSource(
-                    $this->client->get($this->endpoint, $query ?? new CollectionQuery()),
-                ),
-            );
-    }
-
-    /**
-     * @template TResource
+     * Map a single decoded JSON object into a typed {@see Resource}, then stamp `$raw` onto the
+     * mapped object graph. Shipmondo responses are snake_case, so keys are recursively camelCased
+     * to match the DTO property names (used for both the Valinor map and the `$raw` stamp).
      *
-     * @param callable(CollectionQuery):Collection<TResource> $getter
+     * Converts Valinor's `MappingError` (a 2xx body that decoded as JSON but didn't fit the DTO)
+     * into the SDK's typed {@see MappingException}, preserving the original as `$previous`.
      *
-     * @return \Generator<array-key, Collection<TResource>>
+     * @template T of Resource
+     *
+     * @param class-string<T> $signature
+     * @param array<array-key, mixed> $data
+     *
+     * @return T
      */
-    public static function paginate(callable $getter): \Generator
+    protected function mapItem(string $signature, array $data): Resource
     {
-        $query = new CollectionQuery();
+        $camelCased = self::camelCaseKeys($data);
 
-        while (true) {
-            $collection = $getter($query);
-
-            if ($collection->isEmpty()) {
-                break;
-            }
-
-            $query->incrementPage();
-
-            yield $collection;
-        }
-    }
-
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * Takes a response and returns a Valinor Source representation
-     */
-    protected function createSource(ResponseInterface $response): Source
-    {
         try {
-            $data = json_decode(
-                json: (string) $response->getBody(),
-                associative: true,
-                flags: \JSON_THROW_ON_ERROR,
+            $item = $this->mapperBuilder->mapper()->map($signature, $camelCased);
+
+            RawStamper::stamp($item, $camelCased);
+
+            return $item;
+        } catch (MappingError $e) {
+            $response = $this->client->getLastResponse();
+            $request = $this->client->getLastRequest();
+
+            if (null === $response) {
+                throw $e;
+            }
+
+            $context = null === $request
+                ? ''
+                : sprintf(' [%s %s]', $request->getMethod(), (string) $request->getUri()->withQuery('')->withFragment(''));
+
+            throw new MappingException(
+                $response,
+                sprintf('Could not map response body to %s%s: %s', $signature, $context, $e->getMessage()),
+                $e,
+                request: $request,
             );
-            Assert::isArray($data);
-
-            if (array_is_list($data)) {
-                return Source::array(self::prepareCollection($data, $response))->camelCaseKeys();
-            }
-
-            return Source::array($data)->camelCaseKeys();
-        } catch (\Throwable $e) {
-            $lastRequest = $this->client->getLastRequest();
-
-            $message = sprintf('There was an error turning the JSON into a Source representation. The error was: %s.', $e->getMessage());
-
-            if (null !== $lastRequest) {
-                $message .= sprintf(' The request was %s %s', $lastRequest->getMethod(), (string) $lastRequest->getUri());
-            }
-
-            $message .= sprintf("The inputted JSON was:\n%s", (string) $response->getBody());
-
-            $this->logger->error($message);
-
-            throw $e;
         }
     }
 
     /**
-     * @return class-string<TResponse>
+     * Recursively convert snake_case array keys to camelCase so they match DTO property names.
+     *
+     * @param array<array-key, mixed> $data
+     *
+     * @return array<array-key, mixed>
      */
-    abstract protected static function getResponseClass(): string;
-
-    private static function prepareCollection(array $data, ResponseInterface $response): array
+    protected static function camelCaseKeys(array $data): array
     {
-        return array_filter([
-            'page' => (int) $response->getHeaderLine('X-Current-Page'),
-            'pageSize' => (int) $response->getHeaderLine('X-Per-Page'),
-            'totalCount' => (int) $response->getHeaderLine('X-Total-Count'),
-            'totalPages' => (int) $response->getHeaderLine('X-Total-Pages'),
-            'items' => $data,
-        ], static fn (mixed $value): bool => 0 !== $value);
+        $result = [];
+
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $value = self::camelCaseKeys($value);
+            }
+
+            $result[is_string($key) ? self::snakeToCamel($key) : $key] = $value;
+        }
+
+        return $result;
+    }
+
+    private static function snakeToCamel(string $key): string
+    {
+        return lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $key))));
     }
 }

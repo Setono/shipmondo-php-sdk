@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Exception;
 
-use Psr\Http\Message\ResponseInterface;
-
-final class InternalServerErrorException extends ResponseAwareException
+/**
+ * Thrown for 5xx Server Error responses.
+ */
+final class InternalServerErrorException extends ServerErrorException
 {
-    public static function assert(ResponseInterface $response): void
-    {
-        if ($response->getStatusCode() === 500) {
-            throw new self($response);
-        }
-    }
 }
