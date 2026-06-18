@@ -30,7 +30,7 @@ final class ClientTest extends ShipmondoTestCase
         $request = $http->sentRequests[0];
         self::assertSame('Basic ' . base64_encode('user:key'), $request->getHeaderLine('Authorization'));
         self::assertSame('application/json', $request->getHeaderLine('Accept'));
-        self::assertStringStartsWith('Setono-Shipmondo-PHP/', $request->getHeaderLine('User-Agent'));
+        self::assertStringStartsWith('Setono-Shipmondo-PHP', $request->getHeaderLine('User-Agent'));
     }
 
     #[Test]

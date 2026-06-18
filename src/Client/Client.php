@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client;
 
-use Composer\InstalledVersions;
 use CuyZ\Valinor\MapperBuilder;
 use CuyZ\Valinor\Normalizer\Format;
 use CuyZ\Valinor\NormalizerBuilder;
@@ -297,9 +296,7 @@ final class Client implements ClientInterface
 
     private function userAgent(): string
     {
-        $version = InstalledVersions::getVersion('setono/shipmondo-php-sdk') ?? 'dev';
-
-        return sprintf('Setono-Shipmondo-PHP/%s (+https://github.com/Setono/shipmondo-php-sdk)', $version);
+        return 'Setono-Shipmondo-PHP (+https://github.com/Setono/shipmondo-php-sdk)';
     }
 
     private static function camelToSnake(string $key): string
