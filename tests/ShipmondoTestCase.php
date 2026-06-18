@@ -19,4 +19,17 @@ abstract class ShipmondoTestCase extends TestCase
 
         return new Client('user', 'key', sandbox: true, httpClient: $http, requestFactory: $psr17, streamFactory: $psr17);
     }
+
+    /**
+     * Loads a real API response payload captured from the Shipmondo sandbox (see tests/Fixtures).
+     */
+    protected static function fixture(string $name): string
+    {
+        $contents = file_get_contents(__DIR__ . '/Fixtures/' . $name);
+        if (false === $contents) {
+            self::fail(sprintf('Fixture "%s" could not be read.', $name));
+        }
+
+        return $contents;
+    }
 }

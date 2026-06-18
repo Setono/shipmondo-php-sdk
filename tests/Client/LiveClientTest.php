@@ -21,6 +21,8 @@ final class LiveClientTest extends TestCase
 
     private ?ClientInterface $client = null;
 
+    private bool $sandbox = false;
+
     protected function setUp(): void
     {
         if (!in_array(getenv('SHIPMONDO_LIVE'), ['1', 'true'], true)) {
@@ -29,14 +31,19 @@ final class LiveClientTest extends TestCase
 
         $this->apiUser = (string) getenv('SHIPMONDO_USERNAME');
         $this->apiKey = (string) getenv('SHIPMONDO_API_KEY');
+        $this->sandbox = in_array(getenv('SHIPMONDO_SANDBOX'), ['1', 'true'], true);
     }
 
     #[Test]
-    public function it_fetches_a_sales_order(): void
+    public function it_lists_and_fetches_a_sales_order(): void
     {
-        $salesOrder = $this->getClient()->salesOrders()->getById(125204848);
+        $page = $this->getClient()->salesOrders()->getPage();
+        self::assertGreaterThanOrEqual(0, $page->totalCount);
 
-        self::assertSame(125204848, $salesOrder->id);
+        $first = $page->first();
+        if (null !== $first) {
+            self::assertSame($first->id, $this->getClient()->salesOrders()->getById($first->id)->id);
+        }
     }
 
     #[Test]
@@ -61,7 +68,7 @@ final class LiveClientTest extends TestCase
             Assert::notNull($this->apiUser);
             Assert::notNull($this->apiKey);
 
-            $this->client = new Client($this->apiUser, $this->apiKey);
+            $this->client = new Client($this->apiUser, $this->apiKey, sandbox: $this->sandbox);
         }
 
         return $this->client;

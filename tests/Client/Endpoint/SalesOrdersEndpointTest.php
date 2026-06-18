@@ -40,19 +40,21 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
     #[Test]
     public function it_fetches_a_sales_order_by_id_and_stamps_raw(): void
     {
+        // Real sandbox payload for GET /sales_orders/{id}.
         $http = (new ScriptedHttpClient())->on(
-            self::BASE . '/sales_orders/125',
-            '{"id":125,"order_id":"abc","ship_to":{"name":"John","country_code":"DK"}}',
+            self::BASE . '/sales_orders/37707008',
+            self::fixture('sales_order.json'),
         );
 
-        $salesOrder = $this->client($http)->salesOrders()->getById(125);
+        $salesOrder = $this->client($http)->salesOrders()->getById(37707008);
 
-        self::assertSame(125, $salesOrder->id);
+        self::assertSame(37707008, $salesOrder->id);
         // $raw is camelCased so it lines up with the typed property names.
-        self::assertSame('abc', $salesOrder->raw['orderId']);
+        self::assertSame('sdk-test-6a33b7caa74b4', $salesOrder->raw['orderId']);
+        self::assertSame('open', $salesOrder->raw['orderStatus']);
         $shipTo = $salesOrder->raw['shipTo'];
         self::assertIsArray($shipTo);
-        self::assertSame('John', $shipTo['name']);
+        self::assertSame('SDK Test', $shipTo['name']);
     }
 
     #[Test]

@@ -17,25 +17,26 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
     #[Test]
     public function it_creates_a_webhook(): void
     {
-        $http = (new ScriptedHttpClient())->on(
-            self::BASE . '/webhooks',
-            '{"id":5,"endpoint":"https://example.com/hook","active":true,"name":"w","action":"create","resource_name":"Orders"}',
-        );
+        // Real sandbox payload for POST /webhooks.
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/webhooks', self::fixture('webhook.json'));
 
         $webhook = $this->client($http)->webhooks()->create(new WebhookRequest(
-            name: 'w',
-            endpoint: 'https://example.com/hook',
+            name: 'sdk-test',
+            endpoint: 'https://postman-echo.com/post',
             key: 'secret',
             action: WebhookAction::Create,
-            resourceName: WebhookResourceName::Orders,
+            resourceName: WebhookResourceName::Shipments,
         ));
 
-        self::assertSame(5, $webhook->id);
+        self::assertSame(8500472, $webhook->id);
+        self::assertTrue($webhook->active);
+        self::assertSame('create', $webhook->action);
+        self::assertSame('Shipments', $webhook->resourceName);
 
         /** @var array<string, mixed> $body */
         $body = json_decode((string) $http->sentRequests[0]->getBody(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame('create', $body['action']);
-        self::assertSame('Orders', $body['resource_name']);
+        self::assertSame('Shipments', $body['resource_name']);
         self::assertSame('secret', $body['key']);
     }
 
