@@ -38,6 +38,29 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
     }
 
     #[Test]
+    public function it_maps_the_real_sales_orders_list_payload(): void
+    {
+        // Real sandbox payload for GET /sales_orders (two orders).
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/sales_orders?page=1&per_page=20',
+            self::fixture('sales_orders_list.json'),
+            200,
+            ['X-Current-Page' => '1', 'X-Per-Page' => '25', 'X-Total-Count' => '2', 'X-Total-Pages' => '1'],
+        );
+
+        $page = $this->client($http)->salesOrders()->getPage();
+
+        self::assertCount(2, $page);
+        self::assertSame(2, $page->totalCount);
+        self::assertSame(1, $page->totalPages);
+
+        $first = $page->first();
+        self::assertNotNull($first);
+        self::assertSame(37707009, $first->id);
+        self::assertSame('sdk-probe-6a33bb0a6d37e', $first->raw['orderId']);
+    }
+
+    #[Test]
     public function it_fetches_a_sales_order_by_id_and_stamps_raw(): void
     {
         // Real sandbox payload for GET /sales_orders/{id}.

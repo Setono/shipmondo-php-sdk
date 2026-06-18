@@ -88,6 +88,19 @@ $client = new Client(
 
 You can read more about it here: [Valinor: Performance and caching](https://valinor.cuyz.io/latest/other/performance-and-caching/).
 
+## Notes
+
+### Sales orders are eventually consistent
+
+A sales order you just created via `salesOrders()->create()` may not appear in `salesOrders()->getPage()` /
+`paginate()` immediately — Shipmondo indexes the list asynchronously, so there can be a short delay before a new
+order is listed. The order is available straight away by id, so for read-after-write use the id returned by `create()`:
+
+```php
+$created = $client->salesOrders()->create($request);
+$order = $client->salesOrders()->getById($created->id); // available immediately
+```
+
 [ico-version]: https://poser.pugx.org/setono/shipmondo-php-sdk/v/stable
 [ico-license]: https://poser.pugx.org/setono/shipmondo-php-sdk/license
 [ico-github-actions]: https://github.com/Setono/shipmondo-php-sdk/actions/workflows/build.yaml/badge.svg
