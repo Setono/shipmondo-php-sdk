@@ -14,7 +14,7 @@ use Webmozart\Assert\Assert;
  * immediately on creation and expects an HTTP 200 response. `key` is the encryption key used to
  * sign the webhook payloads.
  */
-final class Webhook extends Payload
+final class WebhookRequest extends Payload
 {
     public function __construct(
         public readonly string $name,

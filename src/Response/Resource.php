@@ -19,8 +19,8 @@ namespace Setono\Shipmondo\Response;
 abstract class Resource
 {
     /**
-     * Full decoded JSON for this Resource's slice of the response. Populated by the endpoint after
-     * Valinor maps the typed fields; empty array on hand-constructed instances (e.g. in tests).
+     * The full decoded JSON response, with the original snake_case keys. Populated by the endpoint
+     * after Valinor maps the typed fields; empty array on hand-constructed instances (e.g. in tests).
      *
      * @var array<array-key, mixed>
      */

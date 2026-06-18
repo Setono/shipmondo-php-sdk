@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Request\Webhook\Webhook as WebhookRequest;
-use Setono\Shipmondo\Response\Webhook\Webhook as WebhookResponse;
+use Setono\Shipmondo\Request\Webhook\WebhookRequest;
+use Setono\Shipmondo\Response\Webhook\Webhook;
 
 /**
- * @extends CollectionEndpoint<WebhookResponse>
+ * @extends CollectionEndpoint<Webhook>
  */
 final class WebhooksEndpoint extends CollectionEndpoint
 {
@@ -16,7 +16,7 @@ final class WebhooksEndpoint extends CollectionEndpoint
      * Create a webhook (`POST /webhooks`). Shipmondo immediately calls the endpoint to verify it,
      * expecting an HTTP 200 response.
      */
-    public function create(WebhookRequest $request): WebhookResponse
+    public function create(WebhookRequest $request): Webhook
     {
         return $this->createOne($request);
     }
@@ -34,7 +34,7 @@ final class WebhooksEndpoint extends CollectionEndpoint
      * webhooks are collected across all pages first, then deleted, so deletes don't shift the
      * pagination window mid-walk.
      *
-     * @param (\Closure(WebhookResponse):bool)|null $predicate
+     * @param (\Closure(Webhook):bool)|null $predicate
      */
     public function deleteAll(?\Closure $predicate = null): void
     {
@@ -56,10 +56,10 @@ final class WebhooksEndpoint extends CollectionEndpoint
     }
 
     /**
-     * @return class-string<WebhookResponse>
+     * @return class-string<Webhook>
      */
     protected static function getItemClass(): string
     {
-        return WebhookResponse::class;
+        return Webhook::class;
     }
 }

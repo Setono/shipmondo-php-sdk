@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Setono\Shipmondo\Client\Endpoint;
 
 use CuyZ\Valinor\Mapper\MappingError;
+use CuyZ\Valinor\Mapper\Source\Source;
 use CuyZ\Valinor\MapperBuilder;
 use Setono\Shipmondo\Client\ClientInterface;
 use Setono\Shipmondo\Exception\MappingException;
-use Setono\Shipmondo\Response\RawStamper;
 use Setono\Shipmondo\Response\Resource;
 
 abstract class Endpoint
@@ -20,9 +20,13 @@ abstract class Endpoint
     }
 
     /**
-     * Map a single decoded JSON object into a typed {@see Resource}, then stamp `$raw` onto the
-     * mapped object graph. Shipmondo responses are snake_case, so keys are recursively camelCased
-     * to match the DTO property names (used for both the Valinor map and the `$raw` stamp).
+     * Map a single decoded JSON object into a typed {@see Resource} and stamp `$raw` with the
+     * untouched payload.
+     *
+     * Shipmondo responses are snake_case while the DTOs use camelCase properties, so the source is
+     * run through Valinor's {@see Source::camelCaseKeys()} before mapping. `$raw` keeps the original
+     * snake_case body so consumers can reach any field the SDK does not model (matching the keys in
+     * the Shipmondo API docs).
      *
      * Converts Valinor's `MappingError` (a 2xx body that decoded as JSON but didn't fit the DTO)
      * into the SDK's typed {@see MappingException}, preserving the original as `$previous`.
@@ -36,12 +40,10 @@ abstract class Endpoint
      */
     protected function mapItem(string $signature, array $data): Resource
     {
-        $camelCased = self::camelCaseKeys($data);
-
         try {
-            $item = $this->mapperBuilder->mapper()->map($signature, $camelCased);
+            $item = $this->mapperBuilder->mapper()->map($signature, Source::array($data)->camelCaseKeys());
 
-            RawStamper::stamp($item, $camelCased);
+            $item->raw = $data;
 
             return $item;
         } catch (MappingError $e) {
@@ -63,32 +65,5 @@ abstract class Endpoint
                 request: $request,
             );
         }
-    }
-
-    /**
-     * Recursively convert snake_case array keys to camelCase so they match DTO property names.
-     *
-     * @param array<array-key, mixed> $data
-     *
-     * @return array<array-key, mixed>
-     */
-    protected static function camelCaseKeys(array $data): array
-    {
-        $result = [];
-
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $value = self::camelCaseKeys($value);
-            }
-
-            $result[is_string($key) ? self::snakeToCamel($key) : $key] = $value;
-        }
-
-        return $result;
-    }
-
-    private static function snakeToCamel(string $key): string
-    {
-        return lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $key))));
     }
 }

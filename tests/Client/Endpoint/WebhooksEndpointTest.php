@@ -7,8 +7,8 @@ namespace Setono\Shipmondo\Client\Endpoint;
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
-use Setono\Shipmondo\Request\Webhook\Webhook as WebhookRequest;
-use Setono\Shipmondo\Response\Webhook\Webhook as WebhookResponse;
+use Setono\Shipmondo\Request\Webhook\WebhookRequest;
+use Setono\Shipmondo\Response\Webhook\Webhook;
 use Setono\Shipmondo\ShipmondoTestCase;
 use Setono\Shipmondo\TestDouble\ScriptedHttpClient;
 
@@ -66,7 +66,7 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
         ;
 
         $this->client($http)->webhooks()->deleteAll(
-            static fn (WebhookResponse $webhook): bool => 'drop' === $webhook->name,
+            static fn (Webhook $webhook): bool => 'drop' === $webhook->name,
         );
 
         $deleted = array_values(array_filter(

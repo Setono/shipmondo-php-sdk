@@ -15,7 +15,7 @@ use Webmozart\Assert\Assert;
  *
  * Note the `vat_no` / `vat_id` split between {@see Recipient} (ship_to/bill_to) and {@see Sender}.
  */
-final class SalesOrder extends Payload
+final class SalesOrderRequest extends Payload
 {
     /**
      * @param list<string> $tags

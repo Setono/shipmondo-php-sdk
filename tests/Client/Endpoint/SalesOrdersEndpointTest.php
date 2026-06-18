@@ -9,8 +9,8 @@ use Setono\Shipmondo\Enum\PackingSlipFormat;
 use Setono\Shipmondo\Request\SalesOrder\OrderLine;
 use Setono\Shipmondo\Request\SalesOrder\PaymentDetails;
 use Setono\Shipmondo\Request\SalesOrder\Recipient;
-use Setono\Shipmondo\Request\SalesOrder\SalesOrder as SalesOrderRequest;
-use Setono\Shipmondo\Response\SalesOrder\SalesOrder as SalesOrderResponse;
+use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
+use Setono\Shipmondo\Response\SalesOrder\SalesOrder;
 use Setono\Shipmondo\ShipmondoTestCase;
 use Setono\Shipmondo\TestDouble\ScriptedHttpClient;
 
@@ -33,7 +33,7 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         self::assertSame(20, $page->pageSize);
         self::assertSame(42, $page->totalCount);
         self::assertSame(3, $page->totalPages);
-        self::assertInstanceOf(SalesOrderResponse::class, $page->first());
+        self::assertInstanceOf(SalesOrder::class, $page->first());
         self::assertSame(1, $page->first()->id);
     }
 
@@ -57,7 +57,7 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         $first = $page->first();
         self::assertNotNull($first);
         self::assertSame(37707009, $first->id);
-        self::assertSame('sdk-probe-6a33bb0a6d37e', $first->raw['orderId']);
+        self::assertSame('sdk-probe-6a33bb0a6d37e', $first->raw['order_id']);
     }
 
     #[Test]
@@ -72,10 +72,10 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         $salesOrder = $this->client($http)->salesOrders()->getById(37707008);
 
         self::assertSame(37707008, $salesOrder->id);
-        // $raw is camelCased so it lines up with the typed property names.
-        self::assertSame('sdk-test-6a33b7caa74b4', $salesOrder->raw['orderId']);
-        self::assertSame('open', $salesOrder->raw['orderStatus']);
-        $shipTo = $salesOrder->raw['shipTo'];
+        // $raw keeps the original snake_case keys (the untouched API payload).
+        self::assertSame('sdk-test-6a33b7caa74b4', $salesOrder->raw['order_id']);
+        self::assertSame('open', $salesOrder->raw['order_status']);
+        $shipTo = $salesOrder->raw['ship_to'];
         self::assertIsArray($shipTo);
         self::assertSame('SDK Test', $shipTo['name']);
     }
