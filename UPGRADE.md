@@ -117,17 +117,27 @@ Notable changes:
 - Class constants became native enums (`Setono\Shipmondo\Enum\…`): `OrderLine::LINE_TYPE_*` →
   `OrderLineType`, `Webhook::RESOURCE_*` → `WebhookResourceName`, the webhook action string →
   `WebhookAction`, the packing slip format string → `PackingSlipFormat`.
-- API-required fields are now non-nullable constructor arguments and validated at construction
-  (e.g. `SalesOrderRequest::$orderId`).
+- Request body DTOs are **mutable with all-optional constructor arguments** (like 1.x): build them
+  with named arguments, or incrementally by assigning properties and appending to `$orderLines`.
+  There is no construction-time validation — required fields are enforced by the API (a missing one
+  surfaces as a `ValidationException`).
 
 ```php
-// 2.x — creating a sales order
+// 2.x — one named-argument call
 $client->salesOrders()->create(new SalesOrderRequest(
     orderId: '27000',
     shipTo: new Recipient(name: 'Jane', address1: 'Main 1', city: 'CPH', zipcode: '1000', countryCode: 'DK'),
     paymentDetails: new PaymentDetails(amountIncludingVat: '125.0', vatAmount: '25.0', currencyCode: 'DKK'),
     orderLines: [new OrderLine(itemName: 'Widget', currencyCode: 'DKK', quantity: 1)],
 ));
+
+// 2.x — or built incrementally (e.g. across services/events)
+$request = new SalesOrderRequest();
+$request->orderId = '27000';
+$request->shipTo = new Recipient();
+$request->shipTo->name = 'Jane';
+$request->orderLines[] = new OrderLine(itemName: 'Widget', currencyCode: 'DKK');
+$client->salesOrders()->create($request);
 ```
 
 ## Response DTOs

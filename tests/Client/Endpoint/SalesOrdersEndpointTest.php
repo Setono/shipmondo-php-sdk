@@ -121,4 +121,45 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         self::assertArrayNotHasKey('sender', $body);
         self::assertArrayNotHasKey('tags', $body);
     }
+
+    #[Test]
+    public function it_builds_a_sales_order_incrementally(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
+
+        // Built piecemeal the way the Sylius plugin does: no-arg ctor, mutated over time,
+        // a partially-filled address, and an order line mutated in place before it's appended.
+        $request = new SalesOrderRequest();
+        $request->orderId = '27000';
+        $request->shipTo = new Recipient();
+        $request->shipTo->name = 'Jane';
+        $request->shipTo->city = 'Aalborg';
+
+        $line = new OrderLine();
+        $line->itemName = 'Widget';
+        $line->quantity = 3;
+        $request->orderLines[] = $line;
+
+        $this->client($http)->salesOrders()->create($request);
+
+        /** @var array<string, mixed> $body */
+        $body = json_decode((string) $http->sentRequests[0]->getBody(), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame('27000', $body['order_id']);
+
+        // Partially-filled address: only the set fields are serialized, the null ones are dropped.
+        $shipTo = $body['ship_to'];
+        self::assertIsArray($shipTo);
+        self::assertSame('Jane', $shipTo['name']);
+        self::assertSame('Aalborg', $shipTo['city']);
+        self::assertArrayNotHasKey('address1', $shipTo);
+        self::assertArrayNotHasKey('country_code', $shipTo);
+
+        $orderLines = $body['order_lines'];
+        self::assertIsArray($orderLines);
+        self::assertIsArray($orderLines[0]);
+        self::assertSame('Widget', $orderLines[0]['item_name']);
+        self::assertSame(3, $orderLines[0]['quantity']);
+        self::assertSame('item', $orderLines[0]['line_type']);
+    }
 }

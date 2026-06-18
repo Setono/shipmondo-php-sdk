@@ -6,30 +6,32 @@ namespace Setono\Shipmondo\Request\SalesOrder;
 
 use Setono\Shipmondo\Enum\OrderLineType;
 use Setono\Shipmondo\Request\Payload;
-use Webmozart\Assert\Assert;
 
+/**
+ * A single sales-order line. All properties are optional and mutable, so a line can be constructed
+ * and then mutated in place (e.g. by event subscribers) before being appended to
+ * {@see SalesOrderRequest::$orderLines}. Unset (`null`) fields are omitted from the serialized JSON.
+ */
 final class OrderLine extends Payload
 {
     public function __construct(
-        public readonly string $itemName,
-        public readonly string $currencyCode,
-        public readonly OrderLineType $lineType = OrderLineType::Item,
-        public readonly int|float $quantity = 1,
-        public readonly ?string $itemSku = null,
-        public readonly ?string $itemVariantCode = null,
-        public readonly ?string $unitPriceExcludingVat = null,
-        public readonly ?string $discountAmountExcludingVat = null,
-        public readonly ?string $vatPercent = null,
-        public readonly ?int $unitWeight = null,
-        public readonly ?string $itemBarcode = null,
-        public readonly ?string $itemBin = null,
-        public readonly ?string $imageUrl = null,
-        public readonly ?string $costPrice = null,
-        public readonly ?string $countryCodeOfOrigin = null,
-        public readonly ?string $customsCommodityCode = null,
-        public readonly ?string $customsDescription = null,
+        public ?string $itemName = null,
+        public ?string $currencyCode = null,
+        public OrderLineType $lineType = OrderLineType::Item,
+        public int|float $quantity = 1,
+        public ?string $itemSku = null,
+        public ?string $itemVariantCode = null,
+        public ?string $unitPriceExcludingVat = null,
+        public ?string $discountAmountExcludingVat = null,
+        public ?string $vatPercent = null,
+        public ?int $unitWeight = null,
+        public ?string $itemBarcode = null,
+        public ?string $itemBin = null,
+        public ?string $imageUrl = null,
+        public ?string $costPrice = null,
+        public ?string $countryCodeOfOrigin = null,
+        public ?string $customsCommodityCode = null,
+        public ?string $customsDescription = null,
     ) {
-        Assert::stringNotEmpty($itemName);
-        Assert::stringNotEmpty($currencyCode);
     }
 }
