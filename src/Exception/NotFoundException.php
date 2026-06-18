@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Exception;
 
-use Psr\Http\Message\ResponseInterface;
-
-final class NotFoundException extends ResponseAwareException
+/**
+ * Thrown for 404 Not Found responses.
+ */
+final class NotFoundException extends ClientErrorException
 {
-    public static function assert(ResponseInterface $response): void
-    {
-        if ($response->getStatusCode() === 404) {
-            throw new self($response);
-        }
-    }
 }

@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Resolver;
 
-use Setono\Shipmondo\Response\ShipmentTemplates\ShipmentTemplate;
+use Setono\Shipmondo\Response\ShipmentTemplate\ShipmentTemplate;
 
-final class ShipmentTemplateResolver implements ShipmentTemplateResolverInterface
+final class ShipmentTemplateResolver
 {
     /**
      * For each shipment template we first check if it supports the shipment.
      * If it does, we check if it is the best match based on the weight it supports.
      * The shipment template where the supported weight is closest to the shipment weight is returned.
+     *
+     * @param list<ShipmentTemplate> $shipmentTemplates
      */
     public function resolve(Shipment $shipment, array $shipmentTemplates): ?ShipmentTemplate
     {

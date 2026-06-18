@@ -4,104 +4,107 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client;
 
-use CuyZ\Valinor\MapperBuilder;
-use Nyholm\Psr7\Response;
-use PHPUnit\Framework\TestCase;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-use Setono\Shipmondo\Client\Endpoint\EndpointInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use Setono\Shipmondo\Exception\InternalServerErrorException;
+use Setono\Shipmondo\Exception\MalformedResponseException;
+use Setono\Shipmondo\Exception\NotFoundException;
+use Setono\Shipmondo\Exception\ResponseAwareException;
+use Setono\Shipmondo\Exception\TooManyRequestsException;
+use Setono\Shipmondo\Exception\UnauthorizedException;
+use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
+use Setono\Shipmondo\Exception\ValidationException;
+use Setono\Shipmondo\ShipmondoTestCase;
+use Setono\Shipmondo\TestDouble\ScriptedHttpClient;
 
-/**
- * @covers \Setono\Shipmondo\Client\Client
- */
-final class ClientTest extends TestCase
+final class ClientTest extends ShipmondoTestCase
 {
-    /**
-     * @test
-     */
-    public function it_sends_expected_request(): void
+    #[Test]
+    public function it_sends_basic_auth_and_default_headers(): void
     {
-        $username = 'username';
-        $apiKey = 'api_key';
-        $expectedAuthorizationHeader = 'Basic ' . base64_encode("$username:$apiKey");
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/payment_gateways', '[]', 200, ['X-Total-Pages' => '1']);
+        $client = $this->client($http);
 
-        $httpClient = new MockHttpClient();
+        $client->get('payment_gateways');
 
-        $client = new Client($username, $apiKey);
-        $client->setHttpClient($httpClient);
+        $request = $http->sentRequests[0];
+        self::assertSame('Basic ' . base64_encode('user:key'), $request->getHeaderLine('Authorization'));
+        self::assertSame('application/json', $request->getHeaderLine('Accept'));
+        self::assertStringStartsWith('Setono-Shipmondo-PHP', $request->getHeaderLine('User-Agent'));
+    }
 
-        /** @psalm-suppress PossiblyFalseReference */
-        $client->get('/endpoint/sub', [
-            'param1' => 'value 1',
-            'param2' => 'value 2',
-            'date' => (new \DateTime())
-                ->setTimezone(new \DateTimeZone('UTC'))
-                ->setDate(2023, 2, 15)
-                ->setTime(10, 50),
-        ]);
+    #[Test]
+    public function it_uses_the_production_host_by_default(): void
+    {
+        $http = (new ScriptedHttpClient())->on('https://app.shipmondo.com/api/public/v3/payment_gateways', '[]');
+        $psr17 = new \Nyholm\Psr7\Factory\Psr17Factory();
+        $client = new Client('user', 'key', httpClient: $http, requestFactory: $psr17, streamFactory: $psr17);
 
-        self::assertNotNull($httpClient->lastRequest);
-        self::assertNotNull($client->getLastResponse());
-        self::assertNotNull($client->getLastRequest());
-        self::assertSame('GET', $httpClient->lastRequest->getMethod());
-        self::assertSame(
-            'https://app.shipmondo.com/api/public/v3/endpoint/sub?param1=value%201&param2=value%202&date=2023-02-15T10%3A50%3A00%2B00%3A00',
-            (string) $httpClient->lastRequest->getUri(),
-        );
-        self::assertSame($expectedAuthorizationHeader, $httpClient->lastRequest->getHeaderLine('Authorization'));
+        $client->get('payment_gateways');
+
+        self::assertSame('app.shipmondo.com', $http->sentRequests[0]->getUri()->getHost());
+    }
+
+    #[Test]
+    public function it_uses_the_sandbox_host_when_enabled(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/payment_gateways', '[]');
+
+        $this->client($http)->get('payment_gateways');
+
+        self::assertSame('sandbox.shipmondo.com', $http->sentRequests[0]->getUri()->getHost());
+    }
+
+    #[Test]
+    public function it_builds_the_query_string(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders?page=2&per_page=25', '[]');
+
+        $this->client($http)->get('sales_orders', ['page' => 2, 'per_page' => 25]);
+
+        self::assertSame(self::BASE . '/sales_orders?page=2&per_page=25', (string) $http->sentRequests[0]->getUri());
     }
 
     /**
-     * @test
+     * @param class-string<ResponseAwareException> $expectedException
      */
-    public function it_returns_same_endpoints(): void
+    #[Test]
+    #[DataProvider('statusCodes')]
+    public function it_maps_status_codes_to_typed_exceptions(int $status, string $expectedException, ?string $expectedError): void
     {
-        $client = new Client('apiKey', 'apiSecret');
-        $endpoints = ['paymentGateways', 'shipmentTemplates', 'webhooks'];
-        foreach ($endpoints as $endpoint) {
-            /** @var EndpointInterface $endpointObject */
-            $endpointObject = $client->{$endpoint}();
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"error":"boom"}', $status);
+        $client = $this->client($http);
 
-            // this checks that we get the same instance for each call
-            self::assertSame($endpointObject, $client->{$endpoint}());
+        try {
+            $client->get('sales_orders');
+            self::fail('Expected an exception to be thrown');
+        } catch (ResponseAwareException $e) {
+            self::assertInstanceOf($expectedException, $e);
+            self::assertSame($expectedError, $e->getError());
+            self::assertSame($status, $e->getResponse()->getStatusCode());
         }
     }
 
     /**
-     * @test
+     * @return \Generator<string, array{int, class-string<ResponseAwareException>, ?string}>
      */
-    public function it_returns_same_mapper_builder(): void
+    public static function statusCodes(): \Generator
     {
-        $client = new Client('apiKey', 'apiSecret');
-
-        $mapperBuilder = $client->getMapperBuilder();
-
-        self::assertSame($mapperBuilder, $client->getMapperBuilder());
+        yield '401' => [401, UnauthorizedException::class, 'boom'];
+        yield '404' => [404, NotFoundException::class, 'boom'];
+        yield '422' => [422, ValidationException::class, 'boom'];
+        yield '429' => [429, TooManyRequestsException::class, 'boom'];
+        yield '500' => [500, InternalServerErrorException::class, 'boom'];
+        yield '418' => [418, UnexpectedStatusCodeException::class, 'boom'];
     }
 
-    /**
-     * @test
-     */
-    public function it_allows_to_set_the_mapper_builder(): void
+    #[Test]
+    public function it_throws_on_a_non_json_body(): void
     {
-        $client = new Client('apiKey', 'apiSecret');
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders/1', 'not json');
 
-        $mapperBuilder = $client->getMapperBuilder();
-        $client->setMapperBuilder(new MapperBuilder());
+        $this->expectException(MalformedResponseException::class);
 
-        self::assertNotSame($mapperBuilder, $client->getMapperBuilder());
-    }
-}
-
-final class MockHttpClient implements HttpClientInterface
-{
-    public ?RequestInterface $lastRequest = null;
-
-    public function sendRequest(RequestInterface $request): ResponseInterface
-    {
-        $this->lastRequest = $request;
-
-        return new Response();
+        $this->client($http)->get('sales_orders/1');
     }
 }

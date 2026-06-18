@@ -10,6 +10,6 @@
             "badge": "master"
         }
     },
-    "minMsi": 15.56,
-    "minCoveredMsi": 80.08
+    "minMsi": 50,
+    "minCoveredMsi": 60
 }

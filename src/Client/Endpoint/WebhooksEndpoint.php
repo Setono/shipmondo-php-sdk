@@ -4,36 +4,62 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Response\Webhooks\Webhook as WebhookResponse;
+use Setono\Shipmondo\Request\Webhook\WebhookRequest;
+use Setono\Shipmondo\Response\Webhook\Webhook;
 
 /**
- * @extends Endpoint<WebhookResponse>
+ * @extends CollectionEndpoint<Webhook>
  */
-final class WebhooksEndpoint extends Endpoint implements WebhooksEndpointInterface
+final class WebhooksEndpoint extends CollectionEndpoint
 {
     /**
-     * @use CreatableEndpointTrait<WebhookResponse>
+     * Create a webhook (`POST /webhooks`). Shipmondo immediately calls the endpoint to verify it,
+     * expecting an HTTP 200 response.
      */
-    use CreatableEndpointTrait;
-
-    /**
-     * @use DeletableEndpointTrait<WebhookResponse>
-     */
-    use DeletableEndpointTrait;
-
-    protected static function getResponseClass(): string
+    public function create(WebhookRequest $request): Webhook
     {
-        return WebhookResponse::class;
+        return $this->createOne($request);
     }
 
-    public function deleteAll(\Closure $predicate = null): void
+    /**
+     * Delete a webhook by id (`DELETE /webhooks/{id}`).
+     */
+    public function delete(int $id): void
     {
-        foreach (self::paginate($this->get(...)) as $collection) {
-            $collection = null === $predicate ? $collection : $collection->filter($predicate);
+        $this->client->delete('webhooks', $id);
+    }
 
-            foreach ($collection as $webhook) {
-                $this->delete($webhook->id);
+    /**
+     * Delete every webhook, optionally only those matching the given predicate. All matching
+     * webhooks are collected across all pages first, then deleted, so deletes don't shift the
+     * pagination window mid-walk.
+     *
+     * @param (\Closure(Webhook):bool)|null $predicate
+     */
+    public function deleteAll(?\Closure $predicate = null): void
+    {
+        $webhooks = [];
+        foreach ($this->paginate() as $webhook) {
+            if (null === $predicate || $predicate($webhook)) {
+                $webhooks[] = $webhook;
             }
         }
+
+        foreach ($webhooks as $webhook) {
+            $this->delete($webhook->id);
+        }
+    }
+
+    protected static function getPath(): string
+    {
+        return 'webhooks';
+    }
+
+    /**
+     * @return class-string<Webhook>
+     */
+    protected static function getItemClass(): string
+    {
+        return Webhook::class;
     }
 }

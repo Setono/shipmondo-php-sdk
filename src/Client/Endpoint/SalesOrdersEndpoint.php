@@ -4,25 +4,40 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
-use Setono\Shipmondo\Response\SalesOrders\SalesOrder as SalesOrderResponse;
+use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
+use Setono\Shipmondo\Response\SalesOrder\SalesOrder;
 
 /**
- * @extends Endpoint<SalesOrderResponse>
+ * @extends CollectionEndpoint<SalesOrder>
  */
-final class SalesOrdersEndpoint extends Endpoint implements SalesOrdersEndpointInterface
+final class SalesOrdersEndpoint extends CollectionEndpoint
 {
     /**
-     * @use CreatableEndpointTrait<SalesOrderResponse>
+     * Fetch a single sales order by id (`GET /sales_orders/{id}`).
      */
-    use CreatableEndpointTrait;
+    public function getById(int $id): SalesOrder
+    {
+        return $this->getOne($id);
+    }
 
     /**
-     * @use ReadableEndpointTrait<SalesOrderResponse>
+     * Create a sales order (`POST /sales_orders`).
      */
-    use ReadableEndpointTrait;
-
-    protected static function getResponseClass(): string
+    public function create(SalesOrderRequest $request): SalesOrder
     {
-        return SalesOrderResponse::class;
+        return $this->createOne($request);
+    }
+
+    protected static function getPath(): string
+    {
+        return 'sales_orders';
+    }
+
+    /**
+     * @return class-string<SalesOrder>
+     */
+    protected static function getItemClass(): string
+    {
+        return SalesOrder::class;
     }
 }
