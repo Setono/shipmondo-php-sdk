@@ -14,6 +14,8 @@ Consume the [Shipmondo API](https://app.shipmondo.com/api/public/v3/specificatio
 composer require setono/shipmondo-php-sdk
 ```
 
+> Upgrading from 1.x? See [UPGRADE.md](UPGRADE.md) — 2.x is a rewrite with a number of breaking changes.
+
 ## Usage
 
 ```php
@@ -89,6 +91,18 @@ $client = new Client(
 You can read more about it here: [Valinor: Performance and caching](https://valinor.cuyz.io/latest/other/performance-and-caching/).
 
 ## Notes
+
+### Accessing fields the SDK doesn't model yet
+
+Every response object exposes a `->raw` property containing the full decoded response with its
+original snake_case keys (the same names as the Shipmondo API docs). Use it to reach fields the SDK
+doesn't type yet:
+
+```php
+$order = $client->salesOrders()->getById(123);
+$order->id;                  // typed property
+$order->raw['order_status']; // any field, straight from the API payload
+```
 
 ### Sales orders are eventually consistent
 
