@@ -8,6 +8,8 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Firebase\JWT\SignatureInvalidException;
 use Psr\Http\Message\ServerRequestInterface;
+use Setono\Shipmondo\Enum\WebhookAction;
+use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Exception\MalformedWebhookException;
 use Setono\Shipmondo\Exception\WebhookVerificationException;
 
@@ -29,8 +31,8 @@ use Setono\Shipmondo\Exception\WebhookVerificationException;
  * ```php
  * $event = (new WebhookParser())->parse($serverRequest, $webhookKey);
  *
- * $event->action;       // 'create'
- * $event->resourceType; // 'Shipments'
+ * $event->action;       // WebhookAction::Create
+ * $event->resourceType; // WebhookResourceName::Shipments
  * $event->data;         // array<array-key, mixed> — the resource, snake_case as in the API docs
  * ```
  */
@@ -120,8 +122,8 @@ final class WebhookParser implements WebhookParserInterface
         $user = $headers['smd-user'] ?? '';
 
         return new WebhookEvent(
-            action: $headers['smd-action'] ?? '',
-            resourceType: $headers['smd-resource-type'] ?? '',
+            action: self::action($headers['smd-action'] ?? ''),
+            resourceType: self::resourceType($headers['smd-resource-type'] ?? ''),
             resourceId: self::toInt($headers['smd-resource-id'] ?? ''),
             webhookId: self::toInt($headers['smd-webhook-id'] ?? ''),
             user: '' === $user ? null : $user,
@@ -198,6 +200,28 @@ final class WebhookParser implements WebhookParserInterface
     private static function toInt(string $value): ?int
     {
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    /**
+     * @throws MalformedWebhookException if the SMD-Action header is missing or carries an unknown value
+     */
+    private static function action(string $value): WebhookAction
+    {
+        return WebhookAction::tryFrom($value) ?? throw new MalformedWebhookException(sprintf(
+            'Unexpected SMD-Action header: "%s" is not a webhook action the SDK knows about.',
+            $value,
+        ));
+    }
+
+    /**
+     * @throws MalformedWebhookException if the SMD-Resource-Type header is missing or carries an unknown value
+     */
+    private static function resourceType(string $value): WebhookResourceName
+    {
+        return WebhookResourceName::tryFrom($value) ?? throw new MalformedWebhookException(sprintf(
+            'Unexpected SMD-Resource-Type header: "%s" is not a webhook resource the SDK knows about.',
+            $value,
+        ));
     }
 
     /**

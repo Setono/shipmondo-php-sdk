@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Webhook;
 
+use Setono\Shipmondo\Enum\WebhookAction;
+use Setono\Shipmondo\Enum\WebhookResourceName;
+
 /**
  * A verified incoming webhook delivered by Shipmondo, returned by {@see WebhookParser}.
  *
@@ -12,15 +15,15 @@ namespace Setono\Shipmondo\Webhook;
  * {@see self::$user}); the verified JWT payload populates {@see self::$webhookName},
  * {@see self::$url}, and {@see self::$data}.
  *
- * Following the SDK's lenient-read convention (cf. {@see \Setono\Shipmondo\Response\Webhook\Webhook}),
- * `action` and `resourceType` are plain strings so a new Shipmondo action/resource value never
- * causes parsing to fail.
+ * `action` and `resourceType` are typed enums; {@see WebhookParser} throws a
+ * {@see \Setono\Shipmondo\Exception\MalformedWebhookException} if Shipmondo sends an action or
+ * resource the SDK does not model, rather than passing an unknown value through.
  */
 final class WebhookEvent
 {
     /**
-     * @param string $action the `SMD-Action` header, e.g. `create`, `cancel`, `status_update`
-     * @param string $resourceType the `SMD-Resource-Type` header, e.g. `Shipments`, `Orders`
+     * @param WebhookAction $action the `SMD-Action` header (e.g. `create`, `cancel`, `status_update`)
+     * @param WebhookResourceName $resourceType the `SMD-Resource-Type` header (e.g. `Shipments`, `Orders`)
      * @param int|null $resourceId the `SMD-Resource-Id` header (the id of the affected resource)
      * @param int|null $webhookId the `SMD-Webhook-Id` header (the id of the webhook that fired)
      * @param string|null $user the `SMD-User` header (who triggered the action), or `null` if absent
@@ -31,8 +34,8 @@ final class WebhookEvent
      *                                       resource's GET endpoint
      */
     public function __construct(
-        public readonly string $action,
-        public readonly string $resourceType,
+        public readonly WebhookAction $action,
+        public readonly WebhookResourceName $resourceType,
         public readonly ?int $resourceId,
         public readonly ?int $webhookId,
         public readonly ?string $user,

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Response\Webhook;
 
+use Setono\Shipmondo\Enum\WebhookAction;
+use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Response\Resource;
 
 /**
- * `action` and `resourceName` are kept as plain strings (not enums) on the read side so the SDK
- * never fails to map a response when Shipmondo introduces a new action/resource value. The raw
- * values are also available via {@see Resource::$raw}.
+ * `action` and `resourceName` are typed enums: a webhook whose action/resource the SDK does not
+ * model fails to map (a {@see \Setono\Shipmondo\Exception\MappingException}) rather than silently
+ * passing an unknown value through. The original string values remain available via {@see Resource::$raw}.
  */
 final class Webhook extends Resource
 {
@@ -18,8 +20,8 @@ final class Webhook extends Resource
         public readonly string $endpoint,
         public readonly bool $active,
         public readonly string $name,
-        public readonly string $action,
-        public readonly string $resourceName,
+        public readonly WebhookAction $action,
+        public readonly WebhookResourceName $resourceName,
     ) {
     }
 }
