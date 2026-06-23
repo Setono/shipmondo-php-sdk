@@ -9,6 +9,8 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Setono\Shipmondo\Enum\WebhookAction;
+use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Exception\MalformedWebhookException;
 use Setono\Shipmondo\Exception\WebhookException;
 use Setono\Shipmondo\Exception\WebhookVerificationException;
@@ -42,8 +44,8 @@ final class WebhookParserTest extends TestCase
 
         $event = (new WebhookParser())->parse($request, self::KEY);
 
-        self::assertSame('create', $event->action);
-        self::assertSame('Shipments', $event->resourceType);
+        self::assertSame(WebhookAction::Create, $event->action);
+        self::assertSame(WebhookResourceName::Shipments, $event->resourceType);
         self::assertSame(123, $event->resourceId);
         self::assertSame(456, $event->webhookId);
         self::assertSame('user@example.com', $event->user);
@@ -71,12 +73,43 @@ final class WebhookParserTest extends TestCase
             'Smd-Resource-Id' => '7',
         ], self::KEY);
 
-        self::assertSame('cancel', $event->action);
-        self::assertSame('Orders', $event->resourceType);
+        self::assertSame(WebhookAction::Cancel, $event->action);
+        self::assertSame(WebhookResourceName::Orders, $event->resourceType);
         self::assertSame(7, $event->resourceId);
-        // Headers that were not sent come back as empty-string / null rather than throwing.
+        // Optional headers that were not sent come back as null rather than throwing.
         self::assertNull($event->webhookId);
         self::assertNull($event->user);
+    }
+
+    #[Test]
+    public function it_throws_when_the_action_header_is_unknown(): void
+    {
+        $body = self::body(self::KEY, ['webhook' => 'wh', 'data' => [], 'url' => 'https://example.com/webhook']);
+
+        $this->expectException(MalformedWebhookException::class);
+
+        (new WebhookParser())->parsePayload($body, ['SMD-Action' => 'teleport', 'SMD-Resource-Type' => 'Orders'], self::KEY);
+    }
+
+    #[Test]
+    public function it_throws_when_the_action_header_is_missing(): void
+    {
+        $body = self::body(self::KEY, ['webhook' => 'wh', 'data' => [], 'url' => 'https://example.com/webhook']);
+
+        $this->expectException(MalformedWebhookException::class);
+
+        // No SMD-Action header at all — a delivery the SDK can't interpret, so it blows up.
+        (new WebhookParser())->parsePayload($body, ['SMD-Resource-Type' => 'Orders'], self::KEY);
+    }
+
+    #[Test]
+    public function it_throws_when_the_resource_type_header_is_unknown(): void
+    {
+        $body = self::body(self::KEY, ['webhook' => 'wh', 'data' => [], 'url' => 'https://example.com/webhook']);
+
+        $this->expectException(MalformedWebhookException::class);
+
+        (new WebhookParser())->parsePayload($body, ['SMD-Action' => 'create', 'SMD-Resource-Type' => 'Galaxies'], self::KEY);
     }
 
     #[Test]

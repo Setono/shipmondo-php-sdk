@@ -88,15 +88,20 @@ try {
     return;
 }
 
-$event->action;       // 'create', 'cancel', 'status_update', ... (the SMD-Action header)
-$event->resourceType; // 'Shipments', 'Orders', ... (the SMD-Resource-Type header)
+$event->action;       // WebhookAction::Create     (typed enum, from the SMD-Action header)
+$event->resourceType; // WebhookResourceName::Shipments  (from the SMD-Resource-Type header)
 $event->resourceId;   // int|null (the SMD-Resource-Id header)
-$event->data;         // array<string, mixed> — the resource, snake_case, as in the API docs
+$event->data;         // array<array-key, mixed> — the resource, snake_case, as in the API docs
 $event->data['id'];
 
 // Reply within 3 seconds with a 200, then do the heavy lifting out of band.
 http_response_code(200);
 ```
+
+`action` and `resourceType` are typed enums — if Shipmondo ever sends an action or resource the SDK
+doesn't model, `parse()` throws `MalformedWebhookException` rather than passing an unknown value
+through. (`WebhookResourceName::actions()` lists the actions valid for a resource, and
+`WebhooksEndpoint::create()` rejects an invalid resource/action pair before sending.)
 
 If you are not on PSR-7, pass the raw body and headers instead:
 

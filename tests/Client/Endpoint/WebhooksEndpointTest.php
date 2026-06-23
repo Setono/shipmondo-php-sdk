@@ -33,8 +33,8 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
 
         self::assertSame(8500472, $webhook->id);
         self::assertTrue($webhook->active);
-        self::assertSame('create', $webhook->action);
-        self::assertSame('Shipments', $webhook->resourceName);
+        self::assertSame(WebhookAction::Create, $webhook->action);
+        self::assertSame(WebhookResourceName::Shipments, $webhook->resourceName);
 
         /** @var array<string, mixed> $body */
         $body = json_decode((string) $http->sentRequests[0]->getBody(), true, flags: \JSON_THROW_ON_ERROR);
@@ -112,5 +112,20 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
         $page = $this->client($http)->webhooks()->getPage();
 
         self::assertCount(1, iterator_to_array($page));
+    }
+
+    #[Test]
+    public function it_rejects_an_invalid_resource_action_combination_before_sending(): void
+    {
+        // "delete" is only valid for Orders, not Shipments — this must throw before any HTTP call.
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->client(new ScriptedHttpClient())->webhooks()->create(new WebhookRequest(
+            name: 'sdk-test',
+            endpoint: 'https://example.com',
+            key: 'a-sufficiently-long-webhook-signing-key',
+            action: WebhookAction::Delete,
+            resourceName: WebhookResourceName::Shipments,
+        ));
     }
 }
