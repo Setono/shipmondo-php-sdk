@@ -20,10 +20,12 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
         // Real sandbox payload for POST /webhooks.
         $http = (new ScriptedHttpClient())->on(self::BASE . '/webhooks', self::fixture('webhook.json'));
 
+        $key = 'a-sufficiently-long-webhook-signing-key';
+
         $webhook = $this->client($http)->webhooks()->create(new WebhookRequest(
             name: 'sdk-test',
             endpoint: 'https://postman-echo.com/post',
-            key: 'secret',
+            key: $key,
             action: WebhookAction::Create,
             resourceName: WebhookResourceName::Shipments,
         ));
@@ -37,7 +39,7 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
         $body = json_decode((string) $http->sentRequests[0]->getBody(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame('create', $body['action']);
         self::assertSame('Shipments', $body['resource_name']);
-        self::assertSame('secret', $body['key']);
+        self::assertSame($key, $body['key']);
     }
 
     #[Test]

@@ -55,6 +55,62 @@ Setono\Shipmondo\Response\PaymentGateway\PaymentGateway Object
 )
 ```
 
+## Receiving webhooks
+
+Shipmondo delivers webhooks as a `POST` whose body is `{"data": "<JWT>"}`, where the JWT is
+HS256-signed with the `key` you chose when you created the webhook. Verifying that signature is the
+only way to prove a request really came from Shipmondo, so the SDK ships a `WebhookParser` that does
+it for you and hands back a typed `WebhookEvent`:
+
+> **Webhook keys must be at least 32 bytes.** HS256 requires a key of at least 256 bits / 32 bytes
+> (RFC 7518 §3.2). The SDK enforces this both when you create a webhook (`WebhookRequest`) and when
+> you verify one (`WebhookParser`), so make sure the `key` you set on the webhook is long enough — a
+> shorter key cannot be verified.
+
+```php
+<?php
+
+use Setono\Shipmondo\Exception\MalformedWebhookException;
+use Setono\Shipmondo\Exception\WebhookVerificationException;
+use Setono\Shipmondo\Webhook\WebhookParser;
+
+// $request is a PSR-7 ServerRequestInterface (from your framework / PSR-7 bridge).
+// $key is the key you set on the webhook when creating it via $client->webhooks()->create(...).
+
+try {
+    $event = (new WebhookParser())->parse($request, $key);
+} catch (WebhookVerificationException) {
+    // Forged request or wrong key — do NOT process it.
+    http_response_code(403);
+    return;
+} catch (MalformedWebhookException) {
+    http_response_code(400);
+    return;
+}
+
+$event->action;       // 'create', 'cancel', 'status_update', ... (the SMD-Action header)
+$event->resourceType; // 'Shipments', 'Orders', ... (the SMD-Resource-Type header)
+$event->resourceId;   // int|null (the SMD-Resource-Id header)
+$event->data;         // array<string, mixed> — the resource, snake_case, as in the API docs
+$event->data['id'];
+
+// Reply within 3 seconds with a 200, then do the heavy lifting out of band.
+http_response_code(200);
+```
+
+If you are not on PSR-7, pass the raw body and headers instead:
+
+```php
+$event = (new WebhookParser())->parsePayload($rawBody, $headers, $key);
+```
+
+Both methods pin the HS256 algorithm, so a token presenting any other `alg` (including `none`) is
+rejected. The webhook `key` is passed per call, so a server that hosts several webhooks can read the
+`SMD-Webhook-Id` header to pick the right key before verifying.
+
+`WebhookParser` implements `WebhookParserInterface`, so you can type-hint the interface in your
+controllers/services and inject the parser (or a mock) via your DI container.
+
 ## Production usage
 
 Internally this library uses the [CuyZ/Valinor](https://github.com/CuyZ/Valinor) library which is particularly well suited
