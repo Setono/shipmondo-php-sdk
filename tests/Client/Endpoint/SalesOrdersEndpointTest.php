@@ -10,6 +10,8 @@ use Setono\Shipmondo\Request\SalesOrder\OrderLine;
 use Setono\Shipmondo\Request\SalesOrder\PaymentDetails;
 use Setono\Shipmondo\Request\SalesOrder\Recipient;
 use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
+use Setono\Shipmondo\Request\SalesOrder\Sender;
+use Setono\Shipmondo\Request\SalesOrder\ServicePoint;
 use Setono\Shipmondo\Response\SalesOrder\SalesOrder;
 use Setono\Shipmondo\ShipmondoTestCase;
 use Setono\Shipmondo\TestDouble\ScriptedHttpClient;
@@ -161,5 +163,30 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         self::assertSame('Widget', $orderLines[0]['item_name']);
         self::assertSame(3, $orderLines[0]['quantity']);
         self::assertSame('item', $orderLines[0]['line_type']);
+    }
+
+    #[Test]
+    public function it_serializes_the_sender_and_service_point(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
+
+        $request = new SalesOrderRequest(orderId: '27000');
+        $request->sender = new Sender(name: 'ACME', address1: 'Depot 1', city: 'CPH', zipcode: '1000', countryCode: 'DK', vatId: 'DK999');
+        $request->servicePoint = new ServicePoint(id: '95115', name: 'Spar', zipcode: '9000', city: 'Aalborg', countryCode: 'DK', carrierCode: 'gls');
+
+        $this->client($http)->salesOrders()->create($request);
+
+        /** @var array<string, mixed> $body */
+        $body = json_decode((string) $http->sentRequests[0]->getBody(), true, flags: \JSON_THROW_ON_ERROR);
+
+        // The sender uses `vat_id` (ship_to / bill_to use `vat_no` instead) and null fields are stripped.
+        self::assertSame(
+            ['name' => 'ACME', 'address1' => 'Depot 1', 'city' => 'CPH', 'zipcode' => '1000', 'country_code' => 'DK', 'vat_id' => 'DK999'],
+            $body['sender'],
+        );
+        self::assertSame(
+            ['id' => '95115', 'name' => 'Spar', 'zipcode' => '9000', 'city' => 'Aalborg', 'country_code' => 'DK', 'carrier_code' => 'gls'],
+            $body['service_point'],
+        );
     }
 }

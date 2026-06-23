@@ -67,6 +67,12 @@ final class ShipmentTemplateResolverTest extends TestCase
             ],
             new ShipmentTemplate(id: 2, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 50), new Parcel(1, weight: 50)]),
         ];
+
+        yield 'resolvable with no parcels (country match is enough)' => [
+            new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 100),
+            [new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [])],
+            new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: []),
+        ];
     }
 
     /**

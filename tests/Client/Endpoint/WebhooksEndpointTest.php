@@ -7,6 +7,7 @@ namespace Setono\Shipmondo\Client\Endpoint;
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
+use Setono\Shipmondo\Exception\MappingException;
 use Setono\Shipmondo\Request\Webhook\WebhookRequest;
 use Setono\Shipmondo\Response\Webhook\Webhook;
 use Setono\Shipmondo\ShipmondoTestCase;
@@ -78,5 +79,38 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
 
         self::assertCount(1, $deleted);
         self::assertSame(self::BASE . '/webhooks/2', (string) $deleted[0]->getUri());
+    }
+
+    #[Test]
+    public function it_throws_a_mapping_exception_when_the_response_does_not_fit_the_dto(): void
+    {
+        // 200 OK with a JSON object that decodes fine but can't map to Webhook (required fields missing).
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/webhooks', '{"foo":"bar"}');
+
+        $this->expectException(MappingException::class);
+
+        $this->client($http)->webhooks()->create(new WebhookRequest(
+            name: 'sdk-test',
+            endpoint: 'https://example.com',
+            key: 'a-sufficiently-long-webhook-signing-key',
+            action: WebhookAction::Create,
+            resourceName: WebhookResourceName::Shipments,
+        ));
+    }
+
+    #[Test]
+    public function it_skips_non_array_rows_in_a_page(): void
+    {
+        // The bare array mixes a valid webhook with a scalar row; the scalar must be skipped, not mapped.
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/webhooks?page=1&per_page=20',
+            '[{"id":1,"endpoint":"https://a","active":true,"name":"a","action":"create","resource_name":"Orders"},5]',
+            200,
+            ['X-Total-Pages' => '1'],
+        );
+
+        $page = $this->client($http)->webhooks()->getPage();
+
+        self::assertCount(1, iterator_to_array($page));
     }
 }
