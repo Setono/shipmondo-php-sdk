@@ -166,6 +166,17 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
     }
 
     #[Test]
+    public function it_deletes_a_sales_order_by_id(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders/5', '');
+
+        $this->client($http)->salesOrders()->delete(5);
+
+        self::assertSame('DELETE', $http->sentRequests[0]->getMethod());
+        self::assertSame(self::BASE . '/sales_orders/5', (string) $http->sentRequests[0]->getUri());
+    }
+
+    #[Test]
     public function it_serializes_the_sender_and_service_point(): void
     {
         $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');

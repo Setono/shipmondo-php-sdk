@@ -28,6 +28,14 @@ final class SalesOrdersEndpoint extends CollectionEndpoint
         return $this->createOne($request);
     }
 
+    /**
+     * Delete a sales order by id (`DELETE /sales_orders/{id}`).
+     */
+    public function delete(int $id): void
+    {
+        $this->client->delete('sales_orders', $id);
+    }
+
     protected static function getPath(): string
     {
         return 'sales_orders';
