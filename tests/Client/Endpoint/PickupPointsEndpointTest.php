@@ -49,4 +49,22 @@ final class PickupPointsEndpointTest extends ShipmondoTestCase
             (string) $http->sentRequests[0]->getUri(),
         );
     }
+
+    #[Test]
+    public function it_skips_non_array_rows_in_the_response(): void
+    {
+        $decoded = json_decode(self::fixture('pickup_points.json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        $decoded[] = 'not-an-object'; // a stray scalar row the SDK must skip rather than map
+
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/pickup_points?carrier_code=gls&country_code=DK&zipcode=9000',
+            json_encode($decoded, \JSON_THROW_ON_ERROR),
+        );
+
+        $points = $this->client($http)->pickupPoints()->search(new PickupPointSearch('gls', 'DK', '9000'));
+
+        // Only the two valid pickup points come back; the scalar row was skipped.
+        self::assertCount(2, $points);
+    }
 }

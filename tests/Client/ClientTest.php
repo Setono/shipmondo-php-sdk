@@ -7,6 +7,7 @@ namespace Setono\Shipmondo\Client;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
+use Setono\Shipmondo\Exception\InvalidUrlException;
 use Setono\Shipmondo\Exception\MalformedResponseException;
 use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\ResponseAwareException;
@@ -106,5 +107,76 @@ final class ClientTest extends ShipmondoTestCase
         $this->expectException(MalformedResponseException::class);
 
         $this->client($http)->get('sales_orders/1');
+    }
+
+    #[Test]
+    public function it_throws_when_the_body_is_a_json_scalar_rather_than_an_array(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders/1', '5');
+
+        $this->expectException(MalformedResponseException::class);
+
+        $this->client($http)->get('sales_orders/1');
+    }
+
+    #[Test]
+    public function it_refuses_to_send_credentials_to_a_foreign_host(): void
+    {
+        $this->expectException(InvalidUrlException::class);
+
+        $this->client(new ScriptedHttpClient())->get('https://evil.example.com/sales_orders');
+    }
+
+    #[Test]
+    public function it_refuses_a_non_default_port_on_the_shipmondo_host(): void
+    {
+        $this->expectException(InvalidUrlException::class);
+
+        $this->client(new ScriptedHttpClient())->get('https://sandbox.shipmondo.com:8443/api/public/v3/sales_orders');
+    }
+
+    #[Test]
+    public function it_refuses_query_parameters_combined_with_an_absolute_url(): void
+    {
+        $this->expectException(InvalidUrlException::class);
+
+        $this->client(new ScriptedHttpClient())->get(self::BASE . '/sales_orders', ['page' => 2]);
+    }
+
+    #[Test]
+    public function it_allows_an_absolute_url_on_the_configured_host(): void
+    {
+        $url = self::BASE . '/payment_gateways';
+        $http = (new ScriptedHttpClient())->on($url, '[]');
+
+        $this->client($http)->get($url);
+
+        self::assertSame($url, (string) $http->sentRequests[0]->getUri());
+    }
+
+    #[Test]
+    public function the_last_request_and_response_are_null_before_any_call(): void
+    {
+        $client = $this->client(new ScriptedHttpClient());
+
+        self::assertNull($client->getLastRequest());
+        self::assertNull($client->getLastResponse());
+    }
+
+    #[Test]
+    public function it_exposes_the_last_request_and_response_after_a_call(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/payment_gateways', '[]');
+        $client = $this->client($http);
+
+        $client->get('payment_gateways');
+
+        $lastRequest = $client->getLastRequest();
+        self::assertNotNull($lastRequest);
+        self::assertSame('GET', $lastRequest->getMethod());
+
+        $lastResponse = $client->getLastResponse();
+        self::assertNotNull($lastResponse);
+        self::assertSame(200, $lastResponse->getStatusCode());
     }
 }

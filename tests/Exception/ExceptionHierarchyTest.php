@@ -38,6 +38,31 @@ final class ExceptionHierarchyTest extends TestCase
         self::assertNull($exception->getError());
     }
 
+    #[Test]
+    public function it_reads_the_error_lazily_from_the_response_when_no_body_is_supplied(): void
+    {
+        // No `body:` argument — getError() must fall back to reading the response stream itself.
+        $exception = new ValidationException(new Response(422, [], '{"error":"lazy"}'));
+
+        self::assertSame('lazy', $exception->getError());
+    }
+
+    #[Test]
+    public function it_returns_null_error_for_an_empty_response_body(): void
+    {
+        $exception = new NotFoundException(new Response(404));
+
+        self::assertNull($exception->getError());
+    }
+
+    #[Test]
+    public function it_returns_null_error_when_the_body_decodes_to_a_json_scalar(): void
+    {
+        $exception = new UnexpectedStatusCodeException(new Response(418, [], '5'));
+
+        self::assertNull($exception->getError());
+    }
+
     /**
      * @return \Generator<string, array{string, string}>
      */
