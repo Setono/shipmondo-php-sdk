@@ -39,6 +39,24 @@ final class CollectionRequestOptionsTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('boundaryValues')]
+    public function it_accepts_the_boundary_values(int $page, int $perPage): void
+    {
+        $options = new CollectionRequestOptions($page, $perPage);
+
+        self::assertSame(['page' => $page, 'per_page' => $perPage], $options->toArray());
+    }
+
+    /**
+     * @return \Generator<string, array{int, int}>
+     */
+    public static function boundaryValues(): \Generator
+    {
+        yield 'first page, smallest page size' => [1, 1];
+        yield 'largest page size' => [1, 50];
+    }
+
+    #[Test]
     #[DataProvider('outOfRangeValues')]
     public function it_rejects_out_of_range_values(int $page, int $perPage): void
     {

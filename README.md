@@ -180,9 +180,9 @@ $order = $client->salesOrders()->getById($created->id); // available immediately
 [ico-license]: https://poser.pugx.org/setono/shipmondo-php-sdk/license
 [ico-github-actions]: https://github.com/Setono/shipmondo-php-sdk/actions/workflows/build.yaml/badge.svg
 [ico-code-coverage]: https://codecov.io/gh/Setono/shipmondo-php-sdk/graph/badge.svg
-[ico-infection]: https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2FSetono%2Fshipmondo-php-sdk%2Fmaster
+[ico-infection]: https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2FSetono%2Fshipmondo-php-sdk%2F2.x
 
 [link-packagist]: https://packagist.org/packages/setono/shipmondo-php-sdk
 [link-github-actions]: https://github.com/Setono/shipmondo-php-sdk/actions
 [link-code-coverage]: https://codecov.io/gh/Setono/shipmondo-php-sdk
-[link-infection]: https://dashboard.stryker-mutator.io/reports/github.com/Setono/shipmondo-php-sdk/master
+[link-infection]: https://dashboard.stryker-mutator.io/reports/github.com/Setono/shipmondo-php-sdk/2.x

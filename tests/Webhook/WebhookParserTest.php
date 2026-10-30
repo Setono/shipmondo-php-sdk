@@ -14,6 +14,7 @@ use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Exception\MalformedWebhookException;
 use Setono\Shipmondo\Exception\WebhookException;
 use Setono\Shipmondo\Exception\WebhookVerificationException;
+use Setono\Shipmondo\TestDouble\NonSeekableStream;
 
 #[CoversClass(WebhookParser::class)]
 #[CoversClass(WebhookEvent::class)]
@@ -140,8 +141,46 @@ final class WebhookParserTest extends TestCase
     public function it_rejects_a_key_that_is_too_short_to_verify(): void
     {
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'The webhook key must be at least 32 bytes long for HS256 verification, got 31. Shipmondo signs webhooks '
+            . 'with the key you set when creating them — pick a key of at least 32 bytes.',
+        );
 
-        (new WebhookParser())->parsePayload('{"data":"x"}', [], 'too-short');
+        (new WebhookParser())->parsePayload('{"data":"x"}', [], str_repeat('k', 31));
+    }
+
+    #[Test]
+    public function it_verifies_with_a_key_of_exactly_the_minimum_length(): void
+    {
+        $key = str_repeat('k', 32);
+        $body = self::body($key, ['webhook' => 'wh', 'data' => ['id' => 1], 'url' => 'https://example.com/webhook']);
+
+        $event = (new WebhookParser())->parsePayload($body, ['SMD-Action' => 'create', 'SMD-Resource-Type' => 'Shipments'], $key);
+
+        self::assertSame(['id' => 1], $event->data);
+    }
+
+    #[Test]
+    public function it_parses_a_non_seekable_request_body(): void
+    {
+        // e.g. a PSR-7 request built straight from php://input, which can only be read once.
+        $body = self::body(self::KEY, ['webhook' => 'wh', 'data' => ['id' => 1], 'url' => 'https://example.com/webhook']);
+        $request = (new ServerRequest('POST', 'https://example.com/webhook', ['SMD-Action' => 'create', 'SMD-Resource-Type' => 'Shipments']))
+            ->withBody(new NonSeekableStream($body))
+        ;
+
+        self::assertSame(['id' => 1], (new WebhookParser())->parse($request, self::KEY)->data);
+    }
+
+    #[Test]
+    public function it_parses_a_request_body_that_was_already_read(): void
+    {
+        // Middleware may have consumed the body already; the whole body must still be parsed.
+        $body = self::body(self::KEY, ['webhook' => 'wh', 'data' => ['id' => 1], 'url' => 'https://example.com/webhook']);
+        $request = new ServerRequest('POST', 'https://example.com/webhook', ['SMD-Action' => 'create', 'SMD-Resource-Type' => 'Shipments'], $body);
+        $request->getBody()->getContents();
+
+        self::assertSame(['id' => 1], (new WebhookParser())->parse($request, self::KEY)->data);
     }
 
     #[Test]
@@ -166,6 +205,19 @@ final class WebhookParserTest extends TestCase
         $this->expectException(MalformedWebhookException::class);
 
         (new WebhookParser())->parsePayload('{"data":"not-a-jwt"}', [], self::KEY);
+    }
+
+    #[Test]
+    public function it_throws_a_malformed_exception_when_the_token_header_is_not_json(): void
+    {
+        // Three segments, but the header decodes to "not-json": firebase/php-jwt reports that as a
+        // \DomainException (rather than the \UnexpectedValueException of a wrong segment count).
+        $token = sprintf('%s.%s.%s', JWT::urlsafeB64Encode('not-json'), JWT::urlsafeB64Encode('{}'), JWT::urlsafeB64Encode('sig'));
+
+        $this->expectException(MalformedWebhookException::class);
+        $this->expectExceptionMessage('The webhook token could not be decoded: ');
+
+        (new WebhookParser())->parsePayload(json_encode(['data' => $token], \JSON_THROW_ON_ERROR), [], self::KEY);
     }
 
     #[Test]

@@ -64,17 +64,12 @@ final class WebhookParser implements WebhookParserInterface
      */
     public function parse(ServerRequestInterface $request, string $key): WebhookEvent
     {
-        $body = $request->getBody();
-        if ($body->isSeekable()) {
-            $body->rewind();
-        }
-
         $headers = [];
         foreach (self::HEADERS as $name) {
             $headers[$name] = $request->getHeaderLine($name);
         }
 
-        return $this->parsePayload((string) $body, $headers, $key);
+        return $this->parsePayload((string) $request->getBody(), $headers, $key);
     }
 
     /**
