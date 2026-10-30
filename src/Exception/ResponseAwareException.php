@@ -93,7 +93,6 @@ abstract class ResponseAwareException extends \RuntimeException implements Shipm
      */
     private static function tryDecode(string $body): ?array
     {
-        // An empty or whitespace-only body is not valid JSON either, so it lands in the catch below.
         try {
             $decoded = json_decode($body, true, flags: \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {

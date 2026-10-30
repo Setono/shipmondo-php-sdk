@@ -69,8 +69,6 @@ final class WebhookParser implements WebhookParserInterface
             $headers[$name] = $request->getHeaderLine($name);
         }
 
-        // PSR-7 requires StreamInterface::__toString() to seek to the start of a seekable stream
-        // before reading, so a body already consumed by middleware is still read in full.
         return $this->parsePayload((string) $request->getBody(), $headers, $key);
     }
 
