@@ -48,8 +48,6 @@ abstract class ResponseAwareException extends \RuntimeException implements Shipm
             if ('' !== $bodyText) {
                 $message .= sprintf(' The body was: %s.', $bodyText);
             }
-
-            $message = trim($message);
         }
 
         parent::__construct($message, 0, $previous);
@@ -95,10 +93,7 @@ abstract class ResponseAwareException extends \RuntimeException implements Shipm
      */
     private static function tryDecode(string $body): ?array
     {
-        if ('' === trim($body)) {
-            return null;
-        }
-
+        // An empty or whitespace-only body is not valid JSON either, so it lands in the catch below.
         try {
             $decoded = json_decode($body, true, flags: \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {

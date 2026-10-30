@@ -73,6 +73,36 @@ final class ShipmentTemplateResolverTest extends TestCase
             [new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [])],
             new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: []),
         ];
+
+        yield 'an unsupported template is skipped, not the end of the search' => [
+            new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 100),
+            [
+                new ShipmentTemplate(id: 1, name: 'PostNord', sender: new Sender('SE'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 100)]),
+                new ShipmentTemplate(id: 2, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 100)]),
+            ],
+            new ShipmentTemplate(id: 2, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 100)]),
+        ];
+
+        yield 'the first of two equally close templates wins' => [
+            new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 100),
+            [
+                new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 150)]),
+                new ShipmentTemplate(id: 2, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 150)]),
+            ],
+            new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 150)]),
+        ];
+
+        yield 'an exact fit in the first parcel is enough for an indivisible shipment' => [
+            new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 100, divisible: false),
+            [new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 100), new Parcel(1, weight: 100)])],
+            new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 100), new Parcel(1, weight: 100)]),
+        ];
+
+        yield 'a weightless shipment resolves to a template that carries any weight' => [
+            new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 0),
+            [new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [])],
+            new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: []),
+        ];
     }
 
     /**
@@ -104,5 +134,21 @@ final class ShipmentTemplateResolverTest extends TestCase
             new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 100, divisible: false),
             [new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(2, weight: 50)])],
         ];
+
+        yield 'not divisible across two single parcels' => [
+            new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 100, divisible: false),
+            [new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(1, weight: 50), new Parcel(1, weight: 75)])],
+        ];
+    }
+
+    #[Test]
+    public function a_shipment_is_indivisible_by_default(): void
+    {
+        // Built here rather than in a data provider so the default is exercised under coverage.
+        $shipment = new Shipment(shippingMethod: 'GLS', senderCountry: 'DK', receiverCountry: 'DK', weight: 100);
+        $template = new ShipmentTemplate(id: 1, name: 'GLS', sender: new Sender('DK'), receiver: new Receiver('DK'), parcels: [new Parcel(2, weight: 50)]);
+
+        self::assertFalse($shipment->divisible);
+        self::assertNull((new ShipmentTemplateResolver())->resolve($shipment, [$template]));
     }
 }

@@ -6,6 +6,7 @@ namespace Setono\Shipmondo\Client\Endpoint;
 
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Enum\PackingSlipFormat;
+use Setono\Shipmondo\Exception\MappingException;
 use Setono\Shipmondo\Request\SalesOrder\OrderLine;
 use Setono\Shipmondo\Request\SalesOrder\PaymentDetails;
 use Setono\Shipmondo\Request\SalesOrder\Recipient;
@@ -105,6 +106,7 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         self::assertSame('2018-10-17T13:25:44+00:00', $body['ordered_at']);
         self::assertSame('a4_pdf', $body['packing_slip_format']);
         self::assertFalse($body['archived']);
+        self::assertFalse($body['enable_customs']);
         self::assertTrue($body['use_item_weight']);
         self::assertSame(['name' => 'John', 'address1' => 'Main 1', 'city' => 'CPH', 'zipcode' => '1000', 'country_code' => 'DK', 'vat_no' => 'DK123'], $body['ship_to']);
 
@@ -163,6 +165,42 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         self::assertSame('Widget', $orderLines[0]['item_name']);
         self::assertSame(3, $orderLines[0]['quantity']);
         self::assertSame('item', $orderLines[0]['line_type']);
+    }
+
+    #[Test]
+    public function it_serializes_only_the_defaults_of_a_bare_request(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
+
+        $this->client($http)->salesOrders()->create(new SalesOrderRequest(orderLines: [new OrderLine()]));
+
+        // Every null / [] field is stripped; what remains are the non-null defaults, including an
+        // order line's single-item quantity.
+        self::assertSame(
+            [
+                'archived' => false,
+                'enable_customs' => false,
+                'use_item_weight' => true,
+                'order_lines' => [['line_type' => 'item', 'quantity' => 1]],
+            ],
+            json_decode((string) $http->sentRequests[0]->getBody(), true, flags: \JSON_THROW_ON_ERROR),
+        );
+    }
+
+    #[Test]
+    public function it_keeps_the_query_string_out_of_the_mapping_error_message(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders?page=1&per_page=20', '[{"foo":"bar"}]');
+
+        try {
+            $this->client($http)->salesOrders()->getPage();
+            self::fail('Expected a MappingException');
+        } catch (MappingException $e) {
+            self::assertStringStartsWith(
+                sprintf('Could not map response body to %s [GET %s/sales_orders]: ', SalesOrder::class, self::BASE),
+                $e->getMessage(),
+            );
+        }
     }
 
     #[Test]

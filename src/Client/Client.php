@@ -136,7 +136,7 @@ final class Client implements ClientInterface
     {
         $request = $this->requestFactory->createRequest(
             'DELETE',
-            $this->resolveUrl(sprintf('%s/%d', ltrim($uri, '/'), $id)),
+            $this->resolveUrl(sprintf('%s/%d', $uri, $id)),
         );
 
         return self::decodeJson($request, $this->request($request), allowEmpty: true);
@@ -251,9 +251,10 @@ final class Client implements ClientInterface
     private function resolveUrl(string $uri, array $query = []): string
     {
         if (1 === preg_match('#^https?://#i', $uri)) {
-            // RFC 3986 hosts are case-insensitive — normalize both sides. The SDK refuses to send
-            // its auth credentials to any host other than the one it was configured with.
-            $baseHost = strtolower(self::parseStringPart($this->baseUri, \PHP_URL_HOST));
+            // RFC 3986 hosts are case-insensitive, so normalize the incoming host (the base host is a
+            // lowercase constant). The SDK refuses to send its auth credentials to any host other
+            // than the one it was configured with.
+            $baseHost = self::parseStringPart($this->baseUri, \PHP_URL_HOST);
             $uriHost = strtolower(self::parseStringPart($uri, \PHP_URL_HOST));
 
             if ($baseHost !== $uriHost) {

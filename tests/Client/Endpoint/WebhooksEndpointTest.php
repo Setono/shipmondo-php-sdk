@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client\Endpoint;
 
+use CuyZ\Valinor\Mapper\MappingError;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
@@ -87,45 +89,86 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
         // 200 OK with a JSON object that decodes fine but can't map to Webhook (required fields missing).
         $http = (new ScriptedHttpClient())->on(self::BASE . '/webhooks', '{"foo":"bar"}');
 
-        $this->expectException(MappingException::class);
-
-        $this->client($http)->webhooks()->create(new WebhookRequest(
-            name: 'sdk-test',
-            endpoint: 'https://example.com',
-            key: 'a-sufficiently-long-webhook-signing-key',
-            action: WebhookAction::Create,
-            resourceName: WebhookResourceName::Shipments,
-        ));
+        try {
+            $this->client($http)->webhooks()->create(new WebhookRequest(
+                name: 'sdk-test',
+                endpoint: 'https://example.com',
+                key: 'a-sufficiently-long-webhook-signing-key',
+                action: WebhookAction::Create,
+                resourceName: WebhookResourceName::Shipments,
+            ));
+            self::fail('Expected a MappingException');
+        } catch (MappingException $e) {
+            // The message names the target DTO and the request that produced the unmappable body.
+            self::assertStringStartsWith(
+                sprintf('Could not map response body to %s [POST %s/webhooks]: ', Webhook::class, self::BASE),
+                $e->getMessage(),
+            );
+            self::assertInstanceOf(MappingError::class, $e->getPrevious());
+            self::assertSame(200, $e->getResponse()->getStatusCode());
+        }
     }
 
     #[Test]
     public function it_skips_non_array_rows_in_a_page(): void
     {
-        // The bare array mixes a valid webhook with a scalar row; the scalar must be skipped, not mapped.
+        // The bare array mixes valid webhooks with scalar rows; the scalars must be skipped (not
+        // mapped, and without dropping the rows that follow them).
         $http = (new ScriptedHttpClient())->on(
             self::BASE . '/webhooks?page=1&per_page=20',
-            '[{"id":1,"endpoint":"https://a","active":true,"name":"a","action":"create","resource_name":"Orders"},5]',
+            '[5,{"id":1,"endpoint":"https://a","active":true,"name":"a","action":"create","resource_name":"Orders"},"x",'
+            . '{"id":2,"endpoint":"https://b","active":true,"name":"b","action":"create","resource_name":"Orders"}]',
             200,
             ['X-Total-Pages' => '1'],
         );
 
         $page = $this->client($http)->webhooks()->getPage();
 
-        self::assertCount(1, iterator_to_array($page));
+        self::assertSame([1, 2], array_map(static fn (Webhook $webhook): int => $webhook->id, $page->items));
     }
 
     #[Test]
     public function it_rejects_an_invalid_resource_action_combination_before_sending(): void
     {
         // "delete" is only valid for Orders, not Shipments — this must throw before any HTTP call.
-        $this->expectException(\InvalidArgumentException::class);
+        $http = new ScriptedHttpClient();
 
-        $this->client(new ScriptedHttpClient())->webhooks()->create(new WebhookRequest(
-            name: 'sdk-test',
-            endpoint: 'https://example.com',
-            key: 'a-sufficiently-long-webhook-signing-key',
-            action: WebhookAction::Delete,
-            resourceName: WebhookResourceName::Shipments,
-        ));
+        try {
+            $this->client($http)->webhooks()->create(new WebhookRequest(
+                name: 'sdk-test',
+                endpoint: 'https://example.com',
+                key: 'a-sufficiently-long-webhook-signing-key',
+                action: WebhookAction::Delete,
+                resourceName: WebhookResourceName::Shipments,
+            ));
+            self::fail('Expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            self::assertSame(
+                'The "delete" action is not valid for the "Shipments" resource. Valid actions are: create, cancel.',
+                $e->getMessage(),
+            );
+        }
+
+        self::assertSame([], $http->sentRequests);
+    }
+
+    #[Test]
+    #[DataProvider('partialResourceActionPairs')]
+    public function it_leaves_a_partial_resource_action_pair_to_the_server(?WebhookAction $action, ?WebhookResourceName $resourceName): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/webhooks', self::fixture('webhook.json'));
+
+        $this->client($http)->webhooks()->create(new WebhookRequest(name: 'sdk-test', action: $action, resourceName: $resourceName));
+
+        self::assertCount(1, $http->sentRequests);
+    }
+
+    /**
+     * @return \Generator<string, array{?WebhookAction, ?WebhookResourceName}>
+     */
+    public static function partialResourceActionPairs(): \Generator
+    {
+        yield 'resource without an action' => [null, WebhookResourceName::Shipments];
+        yield 'action without a resource' => [WebhookAction::Delete, null];
     }
 }

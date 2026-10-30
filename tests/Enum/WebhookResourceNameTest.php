@@ -21,7 +21,18 @@ final class WebhookResourceNameTest extends TestCase
             [WebhookAction::Latest, WebhookAction::Delivered],
             WebhookResourceName::ShipmentMonitor->actions(),
         );
-        self::assertContains(WebhookAction::Delete, WebhookResourceName::Orders->actions());
+        self::assertSame(
+            [
+                WebhookAction::Create,
+                WebhookAction::StatusUpdate,
+                WebhookAction::CreateFulfillment,
+                WebhookAction::CreateShipment,
+                WebhookAction::PaymentCaptured,
+                WebhookAction::PaymentVoided,
+                WebhookAction::Delete,
+            ],
+            WebhookResourceName::Orders->actions(),
+        );
     }
 
     #[Test]
