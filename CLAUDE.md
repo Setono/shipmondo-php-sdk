@@ -19,7 +19,7 @@ Composer scripts (`composer.json`):
 
 Run a single test: `vendor/bin/phpunit --filter it_creates_a_sales_order` or `vendor/bin/phpunit tests/Client/Endpoint/SalesOrdersEndpointTest.php`.
 
-Mutation testing: `vendor/bin/infection` (config `infection.json.dist`; thresholds minMsi 50 / minCoveredMsi 60 — ratchet up as coverage improves). pcov is the local coverage driver.
+Mutation testing: `vendor/bin/infection` (config `infection.json.dist`; thresholds minMsi 97 / minCoveredMsi 98, just below the actual scores — new code needs tests that kill its mutants; ratchet up, never down). pcov is the local coverage driver.
 
 The user's shell aliases: `ca` (analyse), `cf` (fix-style), `cfca` (fix then analyse), `phpunit`, `infection`, `rector`.
 
