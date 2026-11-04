@@ -176,6 +176,20 @@ $created = $client->salesOrders()->create($request);
 $order = $client->salesOrders()->getById($created->id); // available immediately
 ```
 
+### Keeping a chosen pickup point
+
+A pickup point found with `pickupPoints()->search()` can be kept, e.g. the one a customer chose in a checkout, and
+sent later as the service point of a sales order. Its JSON holds the typed fields (not `raw`), and
+`PickupPoint::fromArray()` rebuilds it from that JSON, throwing an `\InvalidArgumentException` if a key is missing or
+has the wrong type:
+
+```php
+$json = json_encode($pickupPoint);
+
+$pickupPoint = PickupPoint::fromArray(json_decode($json, true));
+$request->servicePoint = ServicePoint::fromPickupPoint($pickupPoint);
+```
+
 [ico-version]: https://poser.pugx.org/setono/shipmondo-php-sdk/v/stable
 [ico-license]: https://poser.pugx.org/setono/shipmondo-php-sdk/license
 [ico-github-actions]: https://github.com/Setono/shipmondo-php-sdk/actions/workflows/build.yaml/badge.svg
