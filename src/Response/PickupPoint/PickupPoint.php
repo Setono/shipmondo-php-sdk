@@ -37,6 +37,9 @@ final class PickupPoint extends Resource implements \JsonSerializable
      * Rebuilds a pickup point from its JSON. Keys it doesn't model, such as `raw`, are ignored, and `address2` may be
      * left out. The rebuilt pickup point has an empty {@see Resource::$raw}.
      *
+     * It reads the JSON of a pickup point saved with any earlier version of the SDK, back to 1.x, and keeps doing so
+     * within a major version: consumers save pickup points and read them back after upgrading.
+     *
      * @param array<array-key, mixed> $data
      *
      * @throws \InvalidArgumentException if a key is missing or has the wrong type

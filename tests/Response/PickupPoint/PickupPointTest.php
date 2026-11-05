@@ -51,6 +51,42 @@ final class PickupPointTest extends TestCase
         self::assertNull(PickupPoint::fromArray($data)->address2);
     }
 
+    /**
+     * Consumers save pickup points, e.g. the one a customer chose in a checkout, and read them back with fromArray()
+     * after upgrading the SDK. A change that can't read one of these any more breaks their saved pickup points, so
+     * it is a breaking change. Never edit these: add the JSON of the new version when jsonSerialize() changes.
+     */
+    #[Test]
+    #[DataProvider('savedPickupPoints')]
+    public function it_reads_the_pickup_points_saved_with_earlier_versions(string $json, PickupPoint $expected): void
+    {
+        $data = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+
+        self::assertEquals($expected, PickupPoint::fromArray($data));
+    }
+
+    /**
+     * @return \Generator<string, array{string, PickupPoint}>
+     */
+    public static function savedPickupPoints(): \Generator
+    {
+        yield 'v1: json_encode() of its public properties' => [
+            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipcode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
+            self::pickupPoint(),
+        ];
+
+        yield 'v2.0.0-beta.1: json_encode() of its public properties, raw included' => [
+            '{"raw":{"number":"95115","id":"95115","company_name":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","address2":null,"zipcode":"9000","city":"Aalborg","country":"DK","carrier_code":"gls","opening_hours":["Monday: 08:00-20:00"]},"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipcode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00"],"address2":null}',
+            self::pickupPoint(address2: null, openingHours: ['Monday: 08:00-20:00']),
+        ];
+
+        yield 'v2.0.0-beta.2: jsonSerialize()' => [
+            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipcode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
+            self::pickupPoint(),
+        ];
+    }
+
     #[Test]
     public function it_ignores_keys_it_does_not_model(): void
     {
