@@ -9,6 +9,7 @@ use CuyZ\Valinor\Normalizer\Format;
 use CuyZ\Valinor\NormalizerBuilder;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
+use Psr\Http\Client\ClientExceptionInterface as HttpClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
@@ -19,12 +20,15 @@ use Setono\Shipmondo\Client\Endpoint\PickupPointsEndpoint;
 use Setono\Shipmondo\Client\Endpoint\SalesOrdersEndpoint;
 use Setono\Shipmondo\Client\Endpoint\ShipmentTemplatesEndpoint;
 use Setono\Shipmondo\Client\Endpoint\WebhooksEndpoint;
+use Setono\Shipmondo\Exception\ConnectionException;
+use Setono\Shipmondo\Exception\ForbiddenException;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\InvalidUrlException;
 use Setono\Shipmondo\Exception\MalformedResponseException;
 use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\TooManyRequestsException;
 use Setono\Shipmondo\Exception\UnauthorizedException;
+use Setono\Shipmondo\Exception\UnexpectedClientErrorException;
 use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
 use Setono\Shipmondo\Exception\ValidationException;
 use Setono\Shipmondo\Request\Payload;
@@ -101,7 +105,11 @@ final class Client implements ClientInterface
             $request = $request->withHeader('Content-Type', 'application/json');
         }
 
-        $response = $this->httpClient->sendRequest($request);
+        try {
+            $response = $this->httpClient->sendRequest($request);
+        } catch (HttpClientExceptionInterface $e) {
+            throw new ConnectionException($request, $e);
+        }
 
         $this->lastRequest = $request;
         $this->lastResponse = $response;
@@ -367,14 +375,16 @@ final class Client implements ClientInterface
         // Pre-read the body ONCE so the exception's getError() works even on non-seekable streams.
         $body = (string) $response->getBody();
 
-        throw match ($statusCode) {
-            401 => new UnauthorizedException($response, body: $body, request: $request),
-            404 => new NotFoundException($response, body: $body, request: $request),
-            422 => new ValidationException($response, body: $body, request: $request),
-            429 => new TooManyRequestsException($response, body: $body, request: $request),
-            default => $statusCode >= 500
-                ? new InternalServerErrorException($response, body: $body, request: $request)
-                : new UnexpectedStatusCodeException($response, body: $body, request: $request),
+        throw match (true) {
+            401 === $statusCode => new UnauthorizedException($response, body: $body, request: $request),
+            403 === $statusCode => new ForbiddenException($response, body: $body, request: $request),
+            404 === $statusCode => new NotFoundException($response, body: $body, request: $request),
+            422 === $statusCode => new ValidationException($response, body: $body, request: $request),
+            429 === $statusCode => new TooManyRequestsException($response, body: $body, request: $request),
+            $statusCode >= 500 => new InternalServerErrorException($response, body: $body, request: $request),
+            $statusCode >= 400 => new UnexpectedClientErrorException($response, body: $body, request: $request),
+            // neither a success nor an error, e.g. a redirect the HTTP client didn't follow
+            default => new UnexpectedStatusCodeException($response, body: $body, request: $request),
         };
     }
 }

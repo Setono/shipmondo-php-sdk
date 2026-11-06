@@ -8,6 +8,7 @@ use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientExceptionInterface;
 
 final class ExceptionHierarchyTest extends TestCase
 {
@@ -69,6 +70,10 @@ final class ExceptionHierarchyTest extends TestCase
     public static function hierarchy(): \Generator
     {
         yield 'unauthorized is a client error' => [UnauthorizedException::class, ClientErrorException::class];
+        yield 'forbidden is a client error' => [ForbiddenException::class, ClientErrorException::class];
+        yield 'unexpected client error is a client error' => [UnexpectedClientErrorException::class, ClientErrorException::class];
+        yield 'connection is a shipmondo exception' => [ConnectionException::class, ShipmondoException::class];
+        yield 'connection is a PSR-18 client exception' => [ConnectionException::class, ClientExceptionInterface::class];
         yield 'not found is a client error' => [NotFoundException::class, ClientErrorException::class];
         yield 'validation is a client error' => [ValidationException::class, ClientErrorException::class];
         yield 'too many requests is a client error' => [TooManyRequestsException::class, ClientErrorException::class];

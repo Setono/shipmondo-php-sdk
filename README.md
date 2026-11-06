@@ -55,6 +55,50 @@ Setono\Shipmondo\Response\PaymentGateway\PaymentGateway Object
 )
 ```
 
+## Errors
+
+Every exception the SDK throws implements `Setono\Shipmondo\Exception\ShipmondoException`, so one `catch` nets them all,
+a failure of the HTTP client included:
+
+```text
+ShipmondoException
+├── ConnectionException                 no response: the HTTP client failed (its exception is the previous one)
+├── ResponseAwareException              Shipmondo answered: getResponse(), getError()
+│   ├── ClientErrorException            4xx
+│   │   ├── UnauthorizedException       401
+│   │   ├── ForbiddenException          403
+│   │   ├── NotFoundException           404
+│   │   ├── ValidationException         422
+│   │   ├── TooManyRequestsException    429
+│   │   └── UnexpectedClientErrorException  any other 4xx
+│   ├── ServerErrorException            5xx
+│   │   └── InternalServerErrorException
+│   ├── MalformedResponseException      a 2xx body that isn't a JSON object or array
+│   │   └── MappingException            a 2xx body that doesn't fit the response object
+│   └── UnexpectedStatusCodeException   neither a success nor an error, e.g. a redirect the HTTP client didn't follow
+├── InvalidUrlException                 a URL the client won't send the credentials to
+└── WebhookException                    an incoming webhook that can't be verified or parsed (see below)
+```
+
+```php
+use Setono\Shipmondo\Exception\ConnectionException;
+use Setono\Shipmondo\Exception\NotFoundException;
+use Setono\Shipmondo\Exception\ResponseAwareException;
+
+try {
+    $salesOrder = $client->salesOrders()->getById(123);
+} catch (NotFoundException) {
+    // there is no such sales order
+} catch (ResponseAwareException $e) {
+    echo $e->getResponse()->getStatusCode(), ': ', $e->getError(); // Shipmondo's {"error": "..."} message
+} catch (ConnectionException $e) {
+    // no response at all; $e->getPrevious() is the HTTP client's exception
+}
+```
+
+`ConnectionException` is a PSR-18 `ClientExceptionInterface` too, so code that catches the HTTP client's exceptions
+still catches it.
+
 ## Receiving webhooks
 
 Shipmondo delivers webhooks as a `POST` whose body is `{"data": "<JWT>"}`, where the JWT is

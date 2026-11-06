@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Setono\Shipmondo\Exception;
 
 /**
- * Thrown for any non-2xx status code that does not map to a more specific exception.
+ * Thrown for a status code that is neither a success (2xx) nor an error (4xx or 5xx), e.g. a redirect the HTTP client
+ * didn't follow.
  */
 final class UnexpectedStatusCodeException extends ResponseAwareException
 {
