@@ -10,6 +10,8 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Setono\Shipmondo\Exception\ConnectionException;
+use Setono\Shipmondo\Exception\ForbiddenException;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\InvalidUrlException;
 use Setono\Shipmondo\Exception\MalformedResponseException;
@@ -18,10 +20,12 @@ use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\ResponseAwareException;
 use Setono\Shipmondo\Exception\TooManyRequestsException;
 use Setono\Shipmondo\Exception\UnauthorizedException;
+use Setono\Shipmondo\Exception\UnexpectedClientErrorException;
 use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
 use Setono\Shipmondo\Exception\ValidationException;
 use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
 use Setono\Shipmondo\ShipmondoTestCase;
+use Setono\Shipmondo\TestDouble\NetworkFailure;
 use Setono\Shipmondo\TestDouble\NonSeekableStream;
 use Setono\Shipmondo\TestDouble\RecordingPsr17Factory;
 use Setono\Shipmondo\TestDouble\ScriptedHttpClient;
@@ -100,13 +104,40 @@ final class ClientTest extends ShipmondoTestCase
     public static function statusCodes(): \Generator
     {
         yield '401' => [401, UnauthorizedException::class, 'boom'];
+        yield '403' => [403, ForbiddenException::class, 'boom'];
         yield '404' => [404, NotFoundException::class, 'boom'];
         yield '422' => [422, ValidationException::class, 'boom'];
         yield '429' => [429, TooManyRequestsException::class, 'boom'];
+        // every other 4xx is still a client error
+        yield '400' => [400, UnexpectedClientErrorException::class, 'boom'];
+        yield '409' => [409, UnexpectedClientErrorException::class, 'boom'];
+        yield '418' => [418, UnexpectedClientErrorException::class, 'boom'];
+        yield '499' => [499, UnexpectedClientErrorException::class, 'boom'];
         yield '500' => [500, InternalServerErrorException::class, 'boom'];
-        yield '418' => [418, UnexpectedStatusCodeException::class, 'boom'];
+        yield '503' => [503, InternalServerErrorException::class, 'boom'];
         // 3xx is not a success: only 200-299 pass through.
         yield '300' => [300, UnexpectedStatusCodeException::class, 'boom'];
+        yield '399' => [399, UnexpectedStatusCodeException::class, 'boom'];
+    }
+
+    #[Test]
+    public function it_wraps_a_failure_of_the_http_client_so_every_failure_is_a_shipmondo_exception(): void
+    {
+        $http = (new ScriptedHttpClient())->fail(self::BASE . '/sales_orders?secret=s3cr3t', 'Connection refused');
+
+        try {
+            $this->client($http)->get('sales_orders', ['secret' => 's3cr3t']);
+            self::fail('Expected an exception to be thrown');
+        } catch (ConnectionException $e) {
+            self::assertInstanceOf(NetworkFailure::class, $e->getPrevious());
+            self::assertSame('Connection refused', $e->getPrevious()->getMessage());
+            self::assertSame($http->sentRequests[0], $e->getRequest());
+            // the query string is left out, like in the message of an exception that carries Shipmondo's response
+            self::assertSame(
+                'Could not get a response from Shipmondo [GET ' . self::BASE . '/sales_orders]. The HTTP client\'s exception is the previous exception',
+                $e->getMessage(),
+            );
+        }
     }
 
     #[Test]

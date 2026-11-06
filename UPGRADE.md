@@ -171,10 +171,17 @@ $order->raw['order_status'];      // any unmodeled field, snake_case
 
 - `NotAuthorizedException` (401) was renamed to `UnauthorizedException`.
 - New marker interface `ShipmondoException` is implemented by every SDK exception — catch it to net
-  them all.
-- New types: `ValidationException` (422), `TooManyRequestsException` (429), plus the base abstracts
-  `ClientErrorException` (4xx) and `ServerErrorException` (5xx), and `MalformedResponseException` /
-  `MappingException` for unusable 2xx bodies.
+  them all, a failure of the HTTP client included.
+- New types: `ForbiddenException` (403), `ValidationException` (422), `TooManyRequestsException` (429)
+  and `UnexpectedClientErrorException` (any other 4xx), plus the base abstracts `ClientErrorException`
+  (every 4xx) and `ServerErrorException` (5xx), and `MalformedResponseException` / `MappingException`
+  for unusable 2xx bodies. `UnexpectedStatusCodeException` is left for a status code that is neither a
+  success nor an error, e.g. a redirect the HTTP client didn't follow.
+- A failure of the PSR-18 HTTP client (Shipmondo couldn't be reached, the request timed out, …) is
+  thrown as `ConnectionException`, which wraps the HTTP client's exception (`getPrevious()`). It is a
+  PSR-18 `ClientExceptionInterface` itself, so `catch (ClientExceptionInterface)` keeps working, but
+  code that catches a narrower PSR-18 type (`NetworkExceptionInterface`, `RequestExceptionInterface`)
+  or the HTTP client's own exception class has to catch `ConnectionException` and read `getPrevious()`.
 - The per-exception static `assert()` methods were removed (status-code mapping is centralised in the
   `Client`).
 - `ResponseAwareException::getError(): ?string` exposes Shipmondo's `{"error": "..."}` message.
@@ -185,8 +192,14 @@ catch (NotAuthorizedException $e) { /* ... */ }
 
 // 2.x
 catch (UnauthorizedException $e) { /* ... */ }
-catch (ShipmondoException $e) { echo $e->getError(); } // any SDK exception
+catch (ResponseAwareException $e) { echo $e->getError(); } // any answer from Shipmondo that isn't a success
+catch (ShipmondoException $e) { /* ... */ } // any SDK exception
 ```
+
+Changed in 2.0.0-beta.3: a 403 used to throw `UnexpectedStatusCodeException`, and so did every 4xx
+other than 401, 404, 422 and 429; they now throw `ForbiddenException` and
+`UnexpectedClientErrorException`, both `ClientErrorException`s. A failure of the HTTP client used to
+pass through unwrapped; it is now a `ConnectionException`.
 
 ## Resolver
 

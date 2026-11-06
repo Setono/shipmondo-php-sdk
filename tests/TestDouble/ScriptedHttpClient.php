@@ -21,7 +21,7 @@ final class ScriptedHttpClient implements ClientInterface
     /** @var list<RequestInterface> */
     public array $sentRequests = [];
 
-    /** @var array<string, ResponseInterface> */
+    /** @var array<string, ResponseInterface|string> a response, or the message of the network failure to throw */
     private array $scripted = [];
 
     /**
@@ -34,6 +34,16 @@ final class ScriptedHttpClient implements ClientInterface
         }
 
         $this->scripted[$uri] = $response;
+
+        return $this;
+    }
+
+    /**
+     * Makes a request to the URI fail the way a PSR-18 client fails when it can't reach the server
+     */
+    public function fail(string $uri, string $message = 'Connection refused'): self
+    {
+        $this->scripted[$uri] = $message;
 
         return $this;
     }
@@ -51,6 +61,11 @@ final class ScriptedHttpClient implements ClientInterface
             ));
         }
 
-        return $this->scripted[$uri];
+        $response = $this->scripted[$uri];
+        if (is_string($response)) {
+            throw new NetworkFailure($request, $response);
+        }
+
+        return $response;
     }
 }
