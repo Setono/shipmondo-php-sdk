@@ -9,6 +9,7 @@ use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
 use Setono\Shipmondo\Request\SalesOrderSearch;
 use Setono\Shipmondo\Response\Collection\Collection;
 use Setono\Shipmondo\Response\SalesOrder\SalesOrder;
+use Webmozart\Assert\Assert;
 
 /**
  * @extends CollectionEndpoint<SalesOrder>
@@ -33,6 +34,7 @@ final class SalesOrdersEndpoint extends CollectionEndpoint
     public function search(SalesOrderSearch $search, ?CollectionRequestOptions $opts = null): Collection
     {
         $opts ??= new CollectionRequestOptions();
+        Assert::lessThanEq($opts->perPage, 25, 'Shipmondo lists at most 25 sales orders per page');
 
         return $this->mapPage($this->client->get(static::getPath(), $search->toArray() + $opts->toArray()));
     }
