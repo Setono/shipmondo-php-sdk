@@ -220,6 +220,28 @@ $created = $client->salesOrders()->create($request);
 $order = $client->salesOrders()->getById($created->id); // available immediately
 ```
 
+### Searching sales orders
+
+`salesOrders()->search()` lists one page of the sales orders that match Shipmondo's filters, e.g. by the order id a
+shop sent. Shipmondo doesn't say whether a text filter matches exactly or partly, so compare the returned values, and
+note that the list is eventually consistent (see above). Sales orders are listed at most 25 per page:
+
+```php
+use Setono\Shipmondo\Request\CollectionRequestOptions;
+use Setono\Shipmondo\Request\SalesOrderSearch;
+
+$page = $client->salesOrders()->search(
+    new SalesOrderSearch(orderId: '000001234', createdAtMin: new \DateTimeImmutable('-1 hour')),
+    new CollectionRequestOptions(perPage: 25),
+);
+
+foreach ($page as $salesOrder) {
+    if ('000001234' === $salesOrder->raw['order_id']) {
+        // …
+    }
+}
+```
+
 ### Keeping a chosen pickup point
 
 A pickup point found with `pickupPoints()->search()` can be kept, e.g. the one a customer chose in a checkout, and

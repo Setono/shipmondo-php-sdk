@@ -97,7 +97,7 @@ abstract class CollectionEndpoint extends ResourceEndpoint
      *
      * @return Collection<T>
      */
-    private function mapPage(array $data): Collection
+    protected function mapPage(array $data): Collection
     {
         $response = $this->client->getLastResponse();
 

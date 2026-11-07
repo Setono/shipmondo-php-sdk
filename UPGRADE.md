@@ -94,6 +94,18 @@ $client->salesOrders()->get($query);
 $client->salesOrders()->getPage((new CollectionRequestOptions())->withPage(2)->withPerPage(50));
 ```
 
+1.x took any query parameter, so a list could be filtered by passing Shipmondo's filters. In 2.x, sales orders are
+filtered with `salesOrders()->search()` and a `Request\SalesOrderSearch`; it refuses more than 25 per page, the most
+Shipmondo lists:
+
+```php
+// 1.x
+$client->salesOrders()->get(new CollectionQuery(['order_id' => '000001234']));
+
+// 2.x
+$client->salesOrders()->search(new SalesOrderSearch(orderId: '000001234'));
+```
+
 ## Request DTOs
 
 The base class `Request\Request` (a `JsonSerializable` with `filter()`) became `Request\Payload`

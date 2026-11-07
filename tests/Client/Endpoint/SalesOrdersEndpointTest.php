@@ -7,12 +7,14 @@ namespace Setono\Shipmondo\Client\Endpoint;
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Enum\PackingSlipFormat;
 use Setono\Shipmondo\Exception\MappingException;
+use Setono\Shipmondo\Request\CollectionRequestOptions;
 use Setono\Shipmondo\Request\SalesOrder\OrderLine;
 use Setono\Shipmondo\Request\SalesOrder\PaymentDetails;
 use Setono\Shipmondo\Request\SalesOrder\Recipient;
 use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
 use Setono\Shipmondo\Request\SalesOrder\Sender;
 use Setono\Shipmondo\Request\SalesOrder\ServicePoint;
+use Setono\Shipmondo\Request\SalesOrderSearch;
 use Setono\Shipmondo\Response\SalesOrder\SalesOrder;
 use Setono\Shipmondo\ShipmondoTestCase;
 use Setono\Shipmondo\TestDouble\ScriptedHttpClient;
@@ -38,6 +40,52 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         self::assertSame(3, $page->totalPages);
         self::assertInstanceOf(SalesOrder::class, $page->first());
         self::assertSame(1, $page->first()->id);
+    }
+
+    #[Test]
+    public function it_searches_a_page_of_sales_orders_by_the_filters_and_the_page_options(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/sales_orders?order_id=000001234&created_at_min=2026-11-07T10%3A00%3A00.000%2B01%3A00&page=1&per_page=25',
+            '[{"id":1,"order_id":"000001234"}]',
+            200,
+            ['X-Current-Page' => '1', 'X-Per-Page' => '25', 'X-Total-Count' => '1', 'X-Total-Pages' => '1'],
+        );
+
+        $page = $this->client($http)->salesOrders()->search(
+            new SalesOrderSearch(orderId: '000001234', createdAtMin: new \DateTimeImmutable('2026-11-07T10:00:00+01:00')),
+            new CollectionRequestOptions(perPage: 25),
+        );
+
+        self::assertCount(1, $page);
+        self::assertSame(1, $page->totalCount);
+        $salesOrder = $page->first();
+        self::assertNotNull($salesOrder);
+        self::assertSame(1, $salesOrder->id);
+        self::assertSame('000001234', $salesOrder->raw['order_id']);
+    }
+
+    #[Test]
+    public function it_refuses_more_sales_orders_per_page_than_shipmondo_lists(): void
+    {
+        $http = new ScriptedHttpClient();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Shipmondo lists at most 25 sales orders per page');
+
+        try {
+            $this->client($http)->salesOrders()->search(new SalesOrderSearch(orderId: '42'), new CollectionRequestOptions(perPage: 26));
+        } finally {
+            self::assertSame([], $http->sentRequests);
+        }
+    }
+
+    #[Test]
+    public function it_searches_the_first_page_by_default(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders?order_id=42&page=1&per_page=20', '[]');
+
+        self::assertCount(0, $this->client($http)->salesOrders()->search(new SalesOrderSearch(orderId: '42')));
     }
 
     #[Test]

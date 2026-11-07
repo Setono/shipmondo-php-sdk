@@ -6,7 +6,9 @@ namespace Setono\Shipmondo\Client;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Setono\Shipmondo\Request\CollectionRequestOptions;
 use Setono\Shipmondo\Request\PickupPointSearch;
+use Setono\Shipmondo\Request\SalesOrderSearch;
 use Webmozart\Assert\Assert;
 
 /**
@@ -43,6 +45,30 @@ final class LiveClientTest extends TestCase
         $first = $page->first();
         if (null !== $first) {
             self::assertSame($first->id, $this->getClient()->salesOrders()->getById($first->id)->id);
+        }
+    }
+
+    /**
+     * Shows whether Shipmondo matches order_id exactly: every sales order found has the order id searched for
+     */
+    #[Test]
+    public function it_searches_sales_orders_by_order_id(): void
+    {
+        $first = $this->getClient()->salesOrders()->getPage()->first();
+        if (null === $first) {
+            self::markTestSkipped('The account has no sales orders to search for.');
+        }
+
+        $orderId = $first->raw['order_id'] ?? null;
+        if (!is_string($orderId) || '' === $orderId) {
+            self::markTestSkipped('The first sales order has no order id to search for.');
+        }
+
+        $page = $this->getClient()->salesOrders()->search(new SalesOrderSearch(orderId: $orderId), new CollectionRequestOptions(perPage: 25));
+
+        self::assertNotEmpty($page->items);
+        foreach ($page as $salesOrder) {
+            self::assertSame($orderId, $salesOrder->raw['order_id']);
         }
     }
 
