@@ -111,6 +111,26 @@ final class Client implements ClientInterface
             throw new ConnectionException($request, $e);
         }
 
+        // A PSR-18 client may hand over the response before its body has arrived, e.g. Symfony's Psr18Client, so a
+        // failure while Shipmondo is still answering, such as a timeout, only shows when the body is read. Reading
+        // the whole body here makes that an exception, instead of a body that ends too early
+        try {
+            $body = $response->getBody();
+            if ($body->isSeekable()) {
+                $body->rewind();
+            }
+
+            $response = $response->withBody($this->streamFactory->createStream($body->getContents()));
+        } catch (\RuntimeException $e) {
+            $response = $response->withBody($this->streamFactory->createStream(''));
+
+            // A success says Shipmondo did what was asked, e.g. created a sales order, but what it answered is lost.
+            // An error status is still the answer, by which assertStatusCode() throws; only its message is lost
+            if (self::isSuccess($response)) {
+                throw new ConnectionException($request, $e, $response);
+            }
+        }
+
         $this->lastRequest = $request;
         $this->lastResponse = $response;
 
@@ -364,13 +384,20 @@ final class Client implements ClientInterface
         return is_string($value) ? $value : '';
     }
 
-    private static function assertStatusCode(RequestInterface $request, ResponseInterface $response): void
+    private static function isSuccess(ResponseInterface $response): bool
     {
         $statusCode = $response->getStatusCode();
 
-        if ($statusCode >= 200 && $statusCode < 300) {
+        return $statusCode >= 200 && $statusCode < 300;
+    }
+
+    private static function assertStatusCode(RequestInterface $request, ResponseInterface $response): void
+    {
+        if (self::isSuccess($response)) {
             return;
         }
+
+        $statusCode = $response->getStatusCode();
 
         // Pre-read the body ONCE so the exception's getError() works even on non-seekable streams.
         $body = (string) $response->getBody();

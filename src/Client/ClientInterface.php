@@ -28,7 +28,10 @@ interface ClientInterface
     public function getLastResponse(): ?ResponseInterface;
 
     /**
-     * @throws ConnectionException if the HTTP client fails, so there is no response from Shipmondo
+     * Reads the whole body of the response before it returns it, so the body it returns is in memory.
+     *
+     * @throws ConnectionException if the HTTP client fails, so there is no response from Shipmondo, or reading the
+     *                             body of a success fails ({@see ConnectionException::getResponse()})
      * @throws ShipmondoException if the response is non-2xx (concrete subtype depends on the status code)
      */
     public function request(RequestInterface $request): ResponseInterface;
