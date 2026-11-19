@@ -62,7 +62,7 @@ a failure of the HTTP client included:
 
 ```text
 ShipmondoException
-├── ConnectionException                 no response: the HTTP client failed (its exception is the previous one)
+├── ConnectionException                 no whole response: the HTTP client failed, or the body of a success couldn't be read
 ├── ResponseAwareException              Shipmondo answered: getResponse(), getError()
 │   ├── ClientErrorException            4xx
 │   │   ├── UnauthorizedException       401
@@ -92,9 +92,16 @@ try {
 } catch (ResponseAwareException $e) {
     echo $e->getResponse()->getStatusCode(), ': ', $e->getError(); // Shipmondo's {"error": "..."} message
 } catch (ConnectionException $e) {
-    // no response at all; $e->getPrevious() is the HTTP client's exception
+    // no whole response; $e->getPrevious() says why
 }
 ```
+
+The client reads the whole body of every response before it returns it, so a failure while Shipmondo is still
+answering is an exception too, e.g. a body that takes longer than the HTTP client's time limit. When that happens to a
+success, the client throws a `ConnectionException` whose `getResponse()` is that success (its status and headers, with
+an empty body): Shipmondo did what was asked, e.g. created a sales order, but what it answered is lost. Without a
+response, e.g. when Shipmondo couldn't be reached or didn't answer in time, `getResponse()` is `null`. When the body of
+an error status can't be read, the client throws the exception of the status, without Shipmondo's message.
 
 `ConnectionException` is a PSR-18 `ClientExceptionInterface` too, so code that catches the HTTP client's exceptions
 still catches it.

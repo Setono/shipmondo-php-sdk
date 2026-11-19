@@ -8,6 +8,7 @@ use CuyZ\Valinor\MapperBuilder;
 use CuyZ\Valinor\NormalizerBuilder;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
+use Nyholm\Psr7\Stream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Exception\ConnectionException;
@@ -29,6 +30,7 @@ use Setono\Shipmondo\TestDouble\NetworkFailure;
 use Setono\Shipmondo\TestDouble\NonSeekableStream;
 use Setono\Shipmondo\TestDouble\RecordingPsr17Factory;
 use Setono\Shipmondo\TestDouble\ScriptedHttpClient;
+use Setono\Shipmondo\TestDouble\UnreadableStream;
 
 final class ClientTest extends ShipmondoTestCase
 {
@@ -138,6 +140,107 @@ final class ClientTest extends ShipmondoTestCase
                 $e->getMessage(),
             );
         }
+    }
+
+    #[Test]
+    public function it_has_no_response_when_the_http_client_fails(): void
+    {
+        $http = (new ScriptedHttpClient())->fail(self::BASE . '/sales_orders', 'Idle timeout reached');
+
+        try {
+            $this->client($http)->get('sales_orders');
+            self::fail('Expected an exception to be thrown');
+        } catch (ConnectionException $e) {
+            self::assertNull($e->getResponse());
+        }
+    }
+
+    #[Test]
+    public function it_keeps_the_success_when_reading_its_body_fails_so_a_caller_knows_shipmondo_did_what_was_asked(): void
+    {
+        // e.g. a sales order that Shipmondo created, but whose answer took longer than the HTTP client's time limit
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/sales_orders?secret=s3cr3t',
+            new Response(201, ['Content-Type' => 'application/json'], new UnreadableStream('Unable to read stream contents: Idle timeout reached')),
+        );
+
+        try {
+            $this->client($http)->post(self::BASE . '/sales_orders?secret=s3cr3t', new SalesOrderRequest(orderId: '27000'));
+            self::fail('Expected an exception to be thrown');
+        } catch (ConnectionException $e) {
+            self::assertInstanceOf(\RuntimeException::class, $e->getPrevious());
+            self::assertSame('Unable to read stream contents: Idle timeout reached', $e->getPrevious()->getMessage());
+            self::assertSame($http->sentRequests[0], $e->getRequest());
+
+            $response = $e->getResponse();
+            self::assertNotNull($response);
+            self::assertSame(201, $response->getStatusCode());
+            self::assertSame(['application/json'], $response->getHeader('Content-Type'));
+            // the unreadable body is replaced, so reading it doesn't fail again
+            self::assertSame('', $response->getBody()->getContents());
+
+            // the query string is left out, like in the message of an exception that carries Shipmondo's response
+            self::assertSame(
+                'Shipmondo answered 201, but its response could not be read in full [POST ' . self::BASE . '/sales_orders]. The body\'s exception is the previous exception',
+                $e->getMessage(),
+            );
+        }
+    }
+
+    /**
+     * @param class-string<ResponseAwareException> $expectedException
+     */
+    #[Test]
+    #[DataProvider('errorStatuses')]
+    public function it_throws_the_exception_of_an_error_status_whose_body_cannot_be_read(int $status, string $expectedException): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', new Response($status, [], new UnreadableStream()));
+        $client = $this->client($http);
+
+        try {
+            $client->get('sales_orders');
+            self::fail('Expected an exception to be thrown');
+        } catch (ResponseAwareException $e) {
+            self::assertInstanceOf($expectedException, $e);
+            self::assertNull($e->getError());
+            self::assertSame('', $e->getResponse()->getBody()->getContents());
+            self::assertSame($e->getResponse(), $client->getLastResponse());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{int, class-string<ResponseAwareException>}>
+     */
+    public static function errorStatuses(): iterable
+    {
+        yield '503' => [503, InternalServerErrorException::class];
+        yield '422' => [422, ValidationException::class];
+        yield '302' => [302, UnexpectedStatusCodeException::class];
+    }
+
+    #[Test]
+    public function it_reads_a_body_the_http_client_has_already_read(): void
+    {
+        // e.g. a PSR-18 client that logs the responses
+        $body = Stream::create('{"id":5}');
+        $body->getContents();
+
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders/5', new Response(200, [], $body));
+
+        self::assertSame(['id' => 5], $this->client($http)->get('sales_orders/5'));
+    }
+
+    #[Test]
+    public function it_reads_a_non_seekable_body_once_and_keeps_it(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/sales_orders/5',
+            new Response(200, [], new NonSeekableStream('{"id":5}')),
+        );
+        $client = $this->client($http);
+
+        self::assertSame(['id' => 5], $client->get('sales_orders/5'));
+        self::assertSame('{"id":5}', (string) $client->getLastResponse()?->getBody());
     }
 
     #[Test]
@@ -291,7 +394,11 @@ final class ClientTest extends ShipmondoTestCase
 
         self::assertSame(['POST ' . self::BASE . '/sales_orders'], $factory->createdRequests);
         self::assertSame(
-            ['{"order_id":"27000","archived":false,"enable_customs":false,"use_item_weight":true}'],
+            [
+                '{"order_id":"27000","archived":false,"enable_customs":false,"use_item_weight":true}',
+                // the response's body, which the client reads in full
+                '{"id":1}',
+            ],
             $factory->createdStreams,
         );
     }
