@@ -64,10 +64,10 @@ final class SalesOrderSearch
         ];
     }
 
-    private static function assertRange(?\DateTimeInterface $min, ?\DateTimeInterface $max, string $time): void
+    private static function assertRange(?\DateTimeInterface $min, ?\DateTimeInterface $max, string $field): void
     {
         if (null !== $min && null !== $max) {
-            Assert::lessThanEq($min, $max, sprintf('The earliest %1$s time must not be after the latest %1$s time', $time));
+            Assert::lessThanEq($min, $max, sprintf('The earliest %1$s time must not be after the latest %1$s time', $field));
         }
     }
 }

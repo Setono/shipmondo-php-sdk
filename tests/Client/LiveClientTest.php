@@ -48,11 +48,8 @@ final class LiveClientTest extends TestCase
         }
     }
 
-    /**
-     * Shows whether Shipmondo matches order_id exactly: every sales order found has the order id searched for
-     */
     #[Test]
-    public function it_searches_sales_orders_by_order_id(): void
+    public function it_finds_sales_orders_by_their_exact_order_id(): void
     {
         $first = $this->getClient()->salesOrders()->getPage()->first();
         if (null === $first) {

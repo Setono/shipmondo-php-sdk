@@ -39,7 +39,6 @@ final class SalesOrderSearchTest extends TestCase
             'ship_to_email' => 'ship@example.com',
             'ship_to_mobile' => '+4522222222',
             'archived' => 'false',
-            // Shipmondo's documented format, with milliseconds
             'created_at_min' => '2026-11-07T10:00:00.250+01:00',
             'created_at_max' => '2026-11-07T11:00:00.000+01:00',
             'updated_at_min' => '2026-11-07T12:00:00.000+01:00',

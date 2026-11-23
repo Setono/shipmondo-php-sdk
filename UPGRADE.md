@@ -87,16 +87,17 @@ $points   = $client->pickupPoints()->search($pickupPointSearch);   // list<Picku
 
 ```php
 // 1.x
-$query = (new CollectionQuery())->page(2)->perPage(50);
+$query = (new CollectionQuery())->page(2)->perPage(25);
 $client->salesOrders()->get($query);
 
 // 2.x
-$client->salesOrders()->getPage((new CollectionRequestOptions())->withPage(2)->withPerPage(50));
+$client->salesOrders()->getPage((new CollectionRequestOptions())->withPage(2)->withPerPage(25));
 ```
 
+Sales orders are listed at most 25 per page, and every sales-order list in 2.x refuses more.
+
 1.x took any query parameter, so a list could be filtered by passing Shipmondo's filters. In 2.x, sales orders are
-filtered with `salesOrders()->search()` and a `Request\SalesOrderSearch`; it refuses more than 25 per page, the most
-Shipmondo lists:
+filtered with `salesOrders()->search()` and a `Request\SalesOrderSearch`:
 
 ```php
 // 1.x

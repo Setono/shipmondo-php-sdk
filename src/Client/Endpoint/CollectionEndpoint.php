@@ -31,9 +31,7 @@ abstract class CollectionEndpoint extends ResourceEndpoint
      */
     public function getPage(?CollectionRequestOptions $opts = null): Collection
     {
-        $opts ??= new CollectionRequestOptions();
-
-        return $this->mapPage($this->client->get(static::getPath(), $opts->toArray()));
+        return $this->fetchPage($opts);
     }
 
     /**
@@ -93,11 +91,33 @@ abstract class CollectionEndpoint extends ResourceEndpoint
     }
 
     /**
+     * @param array<string, scalar|null> $filters
+     *
+     * @return Collection<T>
+     */
+    protected function fetchPage(?CollectionRequestOptions $opts, array $filters = []): Collection
+    {
+        $opts ??= new CollectionRequestOptions();
+        Assert::lessThanEq(
+            $opts->perPage,
+            static::getMaxPerPage(),
+            sprintf('Shipmondo lists at most %d items per page at "%s".', static::getMaxPerPage(), static::getPath()),
+        );
+
+        return $this->mapPage($this->client->get(static::getPath(), $filters + $opts->toArray()));
+    }
+
+    protected static function getMaxPerPage(): int
+    {
+        return CollectionRequestOptions::MAX_PER_PAGE;
+    }
+
+    /**
      * @param array<array-key, mixed> $data
      *
      * @return Collection<T>
      */
-    protected function mapPage(array $data): Collection
+    private function mapPage(array $data): Collection
     {
         $response = $this->client->getLastResponse();
 

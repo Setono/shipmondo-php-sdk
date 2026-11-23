@@ -9,7 +9,6 @@ use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
 use Setono\Shipmondo\Request\SalesOrderSearch;
 use Setono\Shipmondo\Response\Collection\Collection;
 use Setono\Shipmondo\Response\SalesOrder\SalesOrder;
-use Webmozart\Assert\Assert;
 
 /**
  * @extends CollectionEndpoint<SalesOrder>
@@ -25,18 +24,14 @@ final class SalesOrdersEndpoint extends CollectionEndpoint
     }
 
     /**
-     * Fetch one page of the sales orders that match the search (`GET /sales_orders?order_id=…`). Shipmondo lists at
-     * most 25 sales orders per page, and lists a sales order that was just created only after a short delay (see the
-     * README's note on eventual consistency).
+     * Fetch one page of the sales orders that match the search (`GET /sales_orders?order_id=…`). Shipmondo lists a
+     * sales order that was just created only after a short delay (see the README's note on eventual consistency).
      *
      * @return Collection<SalesOrder>
      */
     public function search(SalesOrderSearch $search, ?CollectionRequestOptions $opts = null): Collection
     {
-        $opts ??= new CollectionRequestOptions();
-        Assert::lessThanEq($opts->perPage, 25, 'Shipmondo lists at most 25 sales orders per page');
-
-        return $this->mapPage($this->client->get(static::getPath(), $search->toArray() + $opts->toArray()));
+        return $this->fetchPage($opts, $search->toArray());
     }
 
     /**
@@ -58,6 +53,11 @@ final class SalesOrdersEndpoint extends CollectionEndpoint
     protected static function getPath(): string
     {
         return 'sales_orders';
+    }
+
+    protected static function getMaxPerPage(): int
+    {
+        return 25;
     }
 
     /**

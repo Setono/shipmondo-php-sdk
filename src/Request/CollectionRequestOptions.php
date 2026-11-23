@@ -9,18 +9,20 @@ use Webmozart\Assert\Assert;
 /**
  * Immutable options for a paginated list request: which page and how many entries per page.
  *
- * `perPage` is capped at 50 (the largest page size any Shipmondo collection accepts); note that
- * sales orders cap at 25, so values in 26–50 are rejected by that endpoint with a 422.
+ * `perPage` is capped at 50 (the largest page size any Shipmondo collection accepts); sales orders
+ * are listed at most 25 per page, so `SalesOrdersEndpoint` refuses 26–50.
  */
 final class CollectionRequestOptions
 {
+    public const MAX_PER_PAGE = 50;
+
     public function __construct(
         public readonly int $page = 1,
         public readonly int $perPage = 20,
     ) {
         Assert::greaterThanEq($page, 1);
         Assert::greaterThanEq($perPage, 1);
-        Assert::lessThanEq($perPage, 50);
+        Assert::lessThanEq($perPage, self::MAX_PER_PAGE);
     }
 
     public static function new(): self
