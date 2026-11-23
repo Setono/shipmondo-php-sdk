@@ -7,6 +7,9 @@ before/after examples.
 ## Dependencies
 
 - `cuyz/valinor` was bumped from `^1.10` to `^2.2.2`.
+- `firebase/php-jwt: ^7.0` was **added**, for verifying incoming webhooks (`WebhookParser`).
+- `php-http/discovery` was bumped from `^1.14` to `^1.19`.
+- `psr/http-message` now also allows `^2.0`.
 - `psr/log` was **removed** — the SDK no longer logs. Wrap your PSR-18 client with logging middleware
   if you need it.
 
@@ -193,6 +196,9 @@ $order->raw['order_status'];      // any unmodeled field, snake_case
   PSR-18 `ClientExceptionInterface` itself, so `catch (ClientExceptionInterface)` keeps working, but
   code that catches a narrower PSR-18 type (`NetworkExceptionInterface`, `RequestExceptionInterface`)
   or the HTTP client's own exception class has to catch `ConnectionException` and read `getPrevious()`.
+- New `InvalidUrlException` (an `\InvalidArgumentException`): the client refuses to send the API
+  credentials to a URL on another host or a non-default port, or to add query parameters to an
+  absolute URL.
 - The per-exception static `assert()` methods were removed (status-code mapping is centralised in the
   `Client`).
 - `ResponseAwareException::getError(): ?string` exposes Shipmondo's `{"error": "..."}` message, and
