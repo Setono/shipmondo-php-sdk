@@ -195,7 +195,9 @@ $order->raw['order_status'];      // any unmodeled field, snake_case
   or the HTTP client's own exception class has to catch `ConnectionException` and read `getPrevious()`.
 - The per-exception static `assert()` methods were removed (status-code mapping is centralised in the
   `Client`).
-- `ResponseAwareException::getError(): ?string` exposes Shipmondo's `{"error": "..."}` message.
+- `ResponseAwareException::getError(): ?string` exposes Shipmondo's `{"error": "..."}` message, and
+  `getRequest(): ?RequestInterface` the request Shipmondo answered (new in 2.0.0-rc.2), like
+  `ConnectionException::getRequest()`.
 
 ```php
 // 1.x

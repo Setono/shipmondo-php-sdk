@@ -97,6 +97,7 @@ final class ClientTest extends ShipmondoTestCase
             self::assertInstanceOf($expectedException, $e);
             self::assertSame($expectedError, $e->getError());
             self::assertSame($status, $e->getResponse()->getStatusCode());
+            self::assertSame($http->sentRequests[0], $e->getRequest());
         }
     }
 
@@ -261,6 +262,33 @@ final class ClientTest extends ShipmondoTestCase
         $this->expectException(MalformedResponseException::class);
 
         $this->client($http)->get('sales_orders/1');
+    }
+
+    /**
+     * A caller can tell from the request whether Shipmondo did what was asked, e.g. created a sales order, although
+     * its answer is unusable
+     */
+    #[Test]
+    #[DataProvider('unreadableBodies')]
+    public function a_success_it_cannot_read_carries_the_request_it_answered(string $body): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', $body, 201);
+
+        try {
+            $this->client($http)->post('sales_orders', new SalesOrderRequest(orderId: '27000'));
+            self::fail('Expected a MalformedResponseException');
+        } catch (MalformedResponseException $e) {
+            self::assertSame($http->sentRequests[0], $e->getRequest());
+        }
+    }
+
+    /**
+     * @return \Generator<string, array{string}>
+     */
+    public static function unreadableBodies(): \Generator
+    {
+        yield 'not JSON' => ['not json'];
+        yield 'a JSON scalar' => ['5'];
     }
 
     #[Test]

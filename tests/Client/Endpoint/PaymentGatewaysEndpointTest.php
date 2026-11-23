@@ -45,8 +45,12 @@ final class PaymentGatewaysEndpointTest extends ShipmondoTestCase
     {
         $http = (new ScriptedHttpClient())->on(self::BASE . '/payment_gateways?id=999', '[]');
 
-        $this->expectException(NotFoundException::class);
-
-        $this->client($http)->paymentGateways()->getById(999);
+        try {
+            $this->client($http)->paymentGateways()->getById(999);
+            self::fail('Expected a NotFoundException');
+        } catch (NotFoundException $e) {
+            self::assertSame('No resource found at "payment_gateways" with id 999.', $e->getMessage());
+            self::assertSame($http->sentRequests[0], $e->getRequest());
+        }
     }
 }

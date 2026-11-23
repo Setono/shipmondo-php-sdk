@@ -236,6 +236,22 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         }
     }
 
+    /**
+     * Shipmondo created the sales order, and the request tells the caller so, although the SDK can't map the answer
+     */
+    #[Test]
+    public function a_created_sales_order_it_cannot_map_carries_the_request_that_created_it(): void
+    {
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"foo":"bar"}', 201);
+
+        try {
+            $this->client($http)->salesOrders()->create(new SalesOrderRequest(orderId: '27000'));
+            self::fail('Expected a MappingException');
+        } catch (MappingException $e) {
+            self::assertSame($http->sentRequests[0], $e->getRequest());
+        }
+    }
+
     #[Test]
     public function it_deletes_a_sales_order_by_id(): void
     {

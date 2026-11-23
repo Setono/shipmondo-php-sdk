@@ -95,6 +95,48 @@ final class Client implements ClientInterface
 
     public function request(RequestInterface $request): ResponseInterface
     {
+        return $this->send($request)[1];
+    }
+
+    public function get(string $uri, array $query = []): array
+    {
+        $request = $this->requestFactory->createRequest('GET', $this->resolveUrl($uri, $query));
+
+        return self::decodeJson(...$this->send($request));
+    }
+
+    public function post(string $uri, Payload $body): array
+    {
+        $request = $this->requestFactory
+            ->createRequest('POST', $this->resolveUrl($uri))
+            ->withBody(
+                $this->streamFactory->createStream(
+                    $this->normalizerBuilder->normalizer(Format::json())->normalize($body),
+                ),
+            )
+        ;
+
+        return self::decodeJson(...$this->send($request));
+    }
+
+    public function delete(string $uri, int $id): array
+    {
+        $request = $this->requestFactory->createRequest(
+            'DELETE',
+            $this->resolveUrl(sprintf('%s/%d', $uri, $id)),
+        );
+
+        return self::decodeJson(...$this->send($request), allowEmpty: true);
+    }
+
+    /**
+     * Sends the request with the credentials and default headers, and reads the whole response
+     *
+     * @return array{RequestInterface, ResponseInterface} the request as it was sent, so an exception about its
+     *                                                    response carries that, and the response
+     */
+    private function send(RequestInterface $request): array
+    {
         $request = $request
             ->withHeader('Authorization', sprintf('Basic %s', base64_encode($this->apiUser . ':' . $this->apiKey)))
             ->withHeader('Accept', 'application/json')
@@ -136,38 +178,7 @@ final class Client implements ClientInterface
 
         self::assertStatusCode($request, $response);
 
-        return $response;
-    }
-
-    public function get(string $uri, array $query = []): array
-    {
-        $request = $this->requestFactory->createRequest('GET', $this->resolveUrl($uri, $query));
-
-        return self::decodeJson($request, $this->request($request));
-    }
-
-    public function post(string $uri, Payload $body): array
-    {
-        $request = $this->requestFactory
-            ->createRequest('POST', $this->resolveUrl($uri))
-            ->withBody(
-                $this->streamFactory->createStream(
-                    $this->normalizerBuilder->normalizer(Format::json())->normalize($body),
-                ),
-            )
-        ;
-
-        return self::decodeJson($request, $this->request($request));
-    }
-
-    public function delete(string $uri, int $id): array
-    {
-        $request = $this->requestFactory->createRequest(
-            'DELETE',
-            $this->resolveUrl(sprintf('%s/%d', $uri, $id)),
-        );
-
-        return self::decodeJson($request, $this->request($request), allowEmpty: true);
+        return [$request, $response];
     }
 
     public function paymentGateways(): PaymentGatewaysEndpoint
