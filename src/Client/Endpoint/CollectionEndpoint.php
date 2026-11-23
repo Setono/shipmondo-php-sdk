@@ -31,9 +31,7 @@ abstract class CollectionEndpoint extends ResourceEndpoint
      */
     public function getPage(?CollectionRequestOptions $opts = null): Collection
     {
-        $opts ??= new CollectionRequestOptions();
-
-        return $this->mapPage($this->client->get(static::getPath(), $opts->toArray()));
+        return $this->fetchPage($opts);
     }
 
     /**
@@ -90,6 +88,18 @@ abstract class CollectionEndpoint extends ResourceEndpoint
         }
 
         return $this->mapItem(static::getItemClass(), $item);
+    }
+
+    /**
+     * @param array<string, scalar|null> $filters
+     *
+     * @return Collection<T>
+     */
+    protected function fetchPage(?CollectionRequestOptions $opts, array $filters = []): Collection
+    {
+        $opts ??= new CollectionRequestOptions();
+
+        return $this->mapPage($this->client->get(static::getPath(), $filters + $opts->toArray()));
     }
 
     /**

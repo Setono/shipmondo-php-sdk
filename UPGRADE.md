@@ -87,11 +87,22 @@ $points   = $client->pickupPoints()->search($pickupPointSearch);   // list<Picku
 
 ```php
 // 1.x
-$query = (new CollectionQuery())->page(2)->perPage(50);
+$query = (new CollectionQuery())->page(2)->perPage(25);
 $client->salesOrders()->get($query);
 
 // 2.x
-$client->salesOrders()->getPage((new CollectionRequestOptions())->withPage(2)->withPerPage(50));
+$client->salesOrders()->getPage((new CollectionRequestOptions())->withPage(2)->withPerPage(25));
+```
+
+1.x took any query parameter, so a list could be filtered by passing Shipmondo's filters. In 2.x, sales orders are
+filtered with `salesOrders()->search()` and a `Request\SalesOrderSearch`:
+
+```php
+// 1.x
+$client->salesOrders()->get(new CollectionQuery(['order_id' => '000001234']));
+
+// 2.x
+$client->salesOrders()->search(new SalesOrderSearch(orderId: '000001234'));
 ```
 
 ## Request DTOs

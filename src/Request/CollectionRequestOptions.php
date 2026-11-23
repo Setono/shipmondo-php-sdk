@@ -9,8 +9,8 @@ use Webmozart\Assert\Assert;
 /**
  * Immutable options for a paginated list request: which page and how many entries per page.
  *
- * `perPage` is capped at 50 (the largest page size any Shipmondo collection accepts); note that
- * sales orders cap at 25, so values in 26–50 are rejected by that endpoint with a 422.
+ * `perPage` is capped at 50 (the largest page size any Shipmondo collection accepts); sales orders
+ * are listed at most 25 per page, and Shipmondo lists 25 when asked for more.
  */
 final class CollectionRequestOptions
 {
