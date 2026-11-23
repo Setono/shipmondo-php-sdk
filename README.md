@@ -63,7 +63,7 @@ a failure of the HTTP client included:
 ```text
 ShipmondoException
 ├── ConnectionException                 no whole response: the HTTP client failed, or the body of a success couldn't be read
-├── ResponseAwareException              Shipmondo answered: getResponse(), getError()
+├── ResponseAwareException              Shipmondo answered: getResponse(), getError(), getRequest()
 │   ├── ClientErrorException            4xx
 │   │   ├── UnauthorizedException       401
 │   │   ├── ForbiddenException          403
@@ -102,6 +102,11 @@ success, the client throws a `ConnectionException` whose `getResponse()` is that
 an empty body): Shipmondo did what was asked, e.g. created a sales order, but what it answered is lost. Without a
 response, e.g. when Shipmondo couldn't be reached or didn't answer in time, `getResponse()` is `null`. When the body of
 an error status can't be read, the client throws the exception of the status, without Shipmondo's message.
+
+Both `ConnectionException` and `ResponseAwareException` have `getRequest()`, the request that failed. So a caller can
+tell, e.g., a `MalformedResponseException` that answered `POST sales_orders` (Shipmondo created the sales order, but
+its answer can't be used) from one that answered a read. The request holds the API credentials in its `Authorization`
+header, so don't log it as it is.
 
 `ConnectionException` is a PSR-18 `ClientExceptionInterface` too, so code that catches the HTTP client's exceptions
 still catches it.

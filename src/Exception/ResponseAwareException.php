@@ -19,7 +19,7 @@ use Psr\Http\Message\ResponseInterface;
  *
  * Supplying `$request` embeds a sanitized `[METHOD URL]` segment in the default message. The URL
  * is sanitized — query string and fragment stripped — so secrets a consumer may have passed via
- * `$query` are not leaked into error messages or logs.
+ * `$query` are not leaked into error messages or logs. {@see self::getRequest()} returns it.
  */
 abstract class ResponseAwareException extends \RuntimeException implements ShipmondoException
 {
@@ -33,7 +33,7 @@ abstract class ResponseAwareException extends \RuntimeException implements Shipm
         ?string $message = null,
         ?\Throwable $previous = null,
         ?string $body = null,
-        ?RequestInterface $request = null,
+        private readonly ?RequestInterface $request = null,
     ) {
         if (null !== $body) {
             $this->parsed = true;
@@ -56,6 +56,20 @@ abstract class ResponseAwareException extends \RuntimeException implements Shipm
     public function getResponse(): ResponseInterface
     {
         return $this->response;
+    }
+
+    /**
+     * The request Shipmondo answered, as it was sent. Every exception the client throws carries it,
+     * so a caller can tell which call failed, e.g. whether a success it couldn't read (a
+     * {@see MalformedResponseException}) answered a call that changes something, so Shipmondo did
+     * what was asked. Null only when the exception was built without one.
+     *
+     * Like {@see ConnectionException::getRequest()}, it is the whole request: its `Authorization`
+     * header holds the API credentials, so don't log it as it is
+     */
+    public function getRequest(): ?RequestInterface
+    {
+        return $this->request;
     }
 
     /**

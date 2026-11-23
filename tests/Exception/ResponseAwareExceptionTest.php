@@ -27,6 +27,20 @@ final class ResponseAwareExceptionTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_the_request_as_it_was_given(): void
+    {
+        $request = (new Psr17Factory())->createRequest('POST', 'https://app.shipmondo.com/api/public/v3/sales_orders?api_key=secret');
+
+        self::assertSame($request, (new ValidationException(new Response(422), request: $request))->getRequest());
+    }
+
+    #[Test]
+    public function it_has_no_request_when_built_without_one(): void
+    {
+        self::assertNull((new ValidationException(new Response(422)))->getRequest());
+    }
+
+    #[Test]
     public function the_default_message_omits_an_empty_body(): void
     {
         $exception = new NotFoundException(new Response(404), body: " \n");

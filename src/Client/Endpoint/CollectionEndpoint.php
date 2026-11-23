@@ -84,6 +84,7 @@ abstract class CollectionEndpoint extends ResourceEndpoint
             throw new NotFoundException(
                 $response,
                 sprintf('No resource found at "%s" with id %d.', static::getPath(), $id),
+                request: $this->client->getLastRequest(),
             );
         }
 
