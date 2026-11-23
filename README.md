@@ -37,22 +37,30 @@ foreach ($paymentGateways as $paymentGateway) {
 }
 ```
 
-To target the sandbox API instead of production, pass `sandbox: true` to the constructor:
-
-```php
-$client = new Client('api_username', 'api_key', sandbox: true);
-```
-
-will output something:
+will output something like:
 
 ```text
 Setono\Shipmondo\Response\PaymentGateway\PaymentGateway Object
 (
+    [raw] => Array
+        (
+            [id] => 1234
+            [name] => quickpay
+            [provider] => quick_pay
+            [merchant_number] => 67894321
+        )
+
     [id] => 1234
     [name] => quickpay
     [provider] => quick_pay
     [merchantNumber] => 67894321
 )
+```
+
+To target the sandbox API instead of production, pass `sandbox: true` to the constructor:
+
+```php
+$client = new Client('api_username', 'api_key', sandbox: true);
 ```
 
 ## Errors
@@ -224,8 +232,10 @@ $order->raw['order_status']; // any field, straight from the API payload
 ### Sales orders are eventually consistent
 
 A sales order you just created via `salesOrders()->create()` may not appear in `salesOrders()->getPage()` /
-`paginate()` immediately — Shipmondo indexes the list asynchronously, so there can be a short delay before a new
-order is listed. The order is available straight away by id, so for read-after-write use the id returned by `create()`:
+`paginate()` / `search()` immediately — Shipmondo indexes the list asynchronously, so there can be a short delay before
+a new order is listed. A search that finds nothing right after a failed `create()` therefore doesn't prove Shipmondo
+didn't create the sales order. The order is available straight away by id, so for read-after-write use the id returned
+by `create()`:
 
 ```php
 $created = $client->salesOrders()->create($request);
@@ -235,8 +245,7 @@ $order = $client->salesOrders()->getById($created->id); // available immediately
 ### Searching sales orders
 
 `salesOrders()->search()` lists one page of the sales orders that match Shipmondo's filters, e.g. by the order id a
-shop sent. Shipmondo doesn't say whether a text filter matches exactly or partly, so compare the returned values, and
-note that the list is eventually consistent (see above). Sales orders are listed at most 25 per page:
+shop sent:
 
 ```php
 use Setono\Shipmondo\Request\CollectionRequestOptions;
@@ -246,13 +255,11 @@ $page = $client->salesOrders()->search(
     new SalesOrderSearch(orderId: '000001234', createdAtMin: new \DateTimeImmutable('-1 hour')),
     new CollectionRequestOptions(perPage: 25),
 );
-
-foreach ($page as $salesOrder) {
-    if ('000001234' === $salesOrder->raw['order_id']) {
-        // …
-    }
-}
 ```
+
+`orderId` matches exactly and case-sensitively, and a search returns every sales order with that order id. Shipmondo
+doesn't document how the other text filters match. Sales orders are listed at most 25 per page; asking for more gets
+25. The list is eventually consistent (see above).
 
 ### Keeping a chosen pickup point
 
