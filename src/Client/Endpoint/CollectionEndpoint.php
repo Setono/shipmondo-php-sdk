@@ -98,18 +98,8 @@ abstract class CollectionEndpoint extends ResourceEndpoint
     protected function fetchPage(?CollectionRequestOptions $opts, array $filters = []): Collection
     {
         $opts ??= new CollectionRequestOptions();
-        Assert::lessThanEq(
-            $opts->perPage,
-            static::getMaxPerPage(),
-            sprintf('Shipmondo lists at most %d items per page at "%s".', static::getMaxPerPage(), static::getPath()),
-        );
 
         return $this->mapPage($this->client->get(static::getPath(), $filters + $opts->toArray()));
-    }
-
-    protected static function getMaxPerPage(): int
-    {
-        return CollectionRequestOptions::MAX_PER_PAGE;
     }
 
     /**

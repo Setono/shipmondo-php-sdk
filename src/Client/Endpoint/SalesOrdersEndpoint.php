@@ -55,11 +55,6 @@ final class SalesOrdersEndpoint extends CollectionEndpoint
         return 'sales_orders';
     }
 
-    protected static function getMaxPerPage(): int
-    {
-        return 25;
-    }
-
     /**
      * @return class-string<SalesOrder>
      */

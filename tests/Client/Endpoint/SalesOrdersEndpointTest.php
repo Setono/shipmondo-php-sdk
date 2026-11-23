@@ -66,36 +66,6 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
     }
 
     #[Test]
-    public function it_refuses_to_search_more_sales_orders_per_page_than_shipmondo_lists(): void
-    {
-        $http = new ScriptedHttpClient();
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Shipmondo lists at most 25 items per page at "sales_orders".');
-
-        try {
-            $this->client($http)->salesOrders()->search(new SalesOrderSearch(orderId: '42'), new CollectionRequestOptions(perPage: 26));
-        } finally {
-            self::assertSame([], $http->sentRequests);
-        }
-    }
-
-    #[Test]
-    public function it_refuses_to_list_more_sales_orders_per_page_than_shipmondo_lists(): void
-    {
-        $http = new ScriptedHttpClient();
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Shipmondo lists at most 25 items per page at "sales_orders".');
-
-        try {
-            $this->client($http)->salesOrders()->getPage(new CollectionRequestOptions(perPage: 26));
-        } finally {
-            self::assertSame([], $http->sentRequests);
-        }
-    }
-
-    #[Test]
     public function it_searches_the_first_page_by_default(): void
     {
         $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders?order_id=42&page=1&per_page=20', '[]');

@@ -94,8 +94,6 @@ $client->salesOrders()->get($query);
 $client->salesOrders()->getPage((new CollectionRequestOptions())->withPage(2)->withPerPage(25));
 ```
 
-Sales orders are listed at most 25 per page, and every sales-order list in 2.x refuses more.
-
 1.x took any query parameter, so a list could be filtered by passing Shipmondo's filters. In 2.x, sales orders are
 filtered with `salesOrders()->search()` and a `Request\SalesOrderSearch`:
 
