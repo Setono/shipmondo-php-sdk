@@ -216,9 +216,10 @@ final class Client implements ClientInterface
      * $client = new Client('API_USER', 'API_KEY', mapperBuilder: $custom);
      * ```
      *
-     * Deliberately registers NO converters — `Resource::$raw` is stamped outside Valinor's
-     * converter pipeline (see {@see \Setono\Shipmondo\Response\RawStamper}) because a registered
-     * converter leaks reflection per mapped node (https://github.com/CuyZ/Valinor/issues/800).
+     * Registers no converters: `Resource::$raw` is stamped by a plain assignment in
+     * {@see \Setono\Shipmondo\Client\Endpoint\Endpoint::mapItem()}, and a field-specific
+     * conversion is an attribute on the field (e.g. {@see \Setono\Shipmondo\Response\NullWhenUnknown}),
+     * which Valinor applies whichever builder is used.
      */
     public static function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
     {

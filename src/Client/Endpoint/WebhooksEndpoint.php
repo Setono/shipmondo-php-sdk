@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Setono\Shipmondo\Client\Endpoint;
 
 use Setono\Shipmondo\Enum\WebhookAction;
-use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Request\Webhook\WebhookRequest;
-use Setono\Shipmondo\Response\Resource;
 use Setono\Shipmondo\Response\Webhook\Webhook;
 
 /**
@@ -70,35 +68,6 @@ final class WebhooksEndpoint extends CollectionEndpoint
         foreach ($webhooks as $webhook) {
             $this->delete($webhook->id);
         }
-    }
-
-    /**
-     * Maps an action or a resource the SDK doesn't model to null, so a webhook made by another
-     * integration, or for an action Shipmondo added later, doesn't make the whole list unreadable.
-     * `$raw` keeps the strings as Shipmondo sent them
-     *
-     * @template T of Resource
-     *
-     * @param class-string<T> $signature
-     * @param array<array-key, mixed> $data
-     *
-     * @return T
-     */
-    protected function mapItem(string $signature, array $data): Resource
-    {
-        $known = $data;
-        if (is_string($data['action'] ?? null) && null === WebhookAction::tryFrom($data['action'])) {
-            $known['action'] = null;
-        }
-
-        if (is_string($data['resource_name'] ?? null) && null === WebhookResourceName::tryFrom($data['resource_name'])) {
-            $known['resource_name'] = null;
-        }
-
-        $item = parent::mapItem($signature, $known);
-        $item->raw = $data;
-
-        return $item;
     }
 
     protected static function getPath(): string

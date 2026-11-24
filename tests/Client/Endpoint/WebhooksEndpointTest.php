@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Setono\Shipmondo\Client\Endpoint;
 
 use CuyZ\Valinor\Mapper\MappingError;
+use CuyZ\Valinor\MapperBuilder;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Setono\Shipmondo\Client\Client;
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Exception\MappingException;
@@ -135,6 +138,28 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
         self::assertSame('an_action_added_later', $webhooks[1]->raw['action']);
         self::assertSame('A resource added later', $webhooks[2]->raw['resource_name']);
         self::assertSame(['https://c', false, 'unknown resource'], [$webhooks[2]->endpoint, $webhooks[2]->active, $webhooks[2]->name]);
+    }
+
+    /**
+     * The leniency lives on the webhook's fields, not in the SDK's mapper configuration, so it also holds for a consumer
+     * that passes a mapper builder of its own without {@see Client::configureMapperBuilder()}
+     */
+    #[Test]
+    public function it_reads_an_unknown_action_as_null_also_with_a_mapper_builder_of_the_consumers_own(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/webhooks?page=1&per_page=20',
+            '[{"id":2,"endpoint":"https://b","active":true,"name":"unknown action","action":"an_action_added_later","resource_name":"Orders"}]',
+            200,
+            ['X-Total-Pages' => '1'],
+        );
+        $psr17 = new Psr17Factory();
+        $client = new Client('user', 'key', sandbox: true, httpClient: $http, requestFactory: $psr17, streamFactory: $psr17, mapperBuilder: new MapperBuilder());
+
+        $webhook = $client->webhooks()->getPage()->items[0];
+
+        self::assertNull($webhook->action);
+        self::assertSame(WebhookResourceName::Orders, $webhook->resourceName);
     }
 
     #[Test]

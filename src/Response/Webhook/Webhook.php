@@ -6,6 +6,7 @@ namespace Setono\Shipmondo\Response\Webhook;
 
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
+use Setono\Shipmondo\Response\NullWhenUnknown;
 use Setono\Shipmondo\Response\Resource;
 
 /**
@@ -22,7 +23,9 @@ final class Webhook extends Resource
         public readonly string $endpoint,
         public readonly bool $active,
         public readonly string $name,
+        #[NullWhenUnknown(WebhookAction::class)]
         public readonly ?WebhookAction $action,
+        #[NullWhenUnknown(WebhookResourceName::class)]
         public readonly ?WebhookResourceName $resourceName,
     ) {
     }

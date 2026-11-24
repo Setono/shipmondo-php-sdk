@@ -13,14 +13,14 @@ use Webmozart\Assert\Assert;
  * body. {@see self::toArray()} emits the snake_case query keys Shipmondo expects (including the
  * misspelled `zipcode`); `null` optional values are dropped by `http_build_query` in the client.
  */
-final class PickupPointSearch
+final readonly class PickupPointSearch
 {
     public function __construct(
-        public readonly string $carrierCode,
-        public readonly string $countryCode,
-        public readonly string $zipCode,
-        public readonly ?string $address = null,
-        public readonly ?string $city = null,
+        public string $carrierCode,
+        public string $countryCode,
+        public string $zipCode,
+        public ?string $address = null,
+        public ?string $city = null,
     ) {
         Assert::stringNotEmpty($carrierCode, 'The carrier code must be a non-empty string');
         Assert::stringNotEmpty($countryCode, 'The country code must be a non-empty string');

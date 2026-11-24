@@ -14,23 +14,23 @@ use Webmozart\Assert\Assert;
  * dropped by `http_build_query` in the client. Shipmondo doesn't document whether a text filter such as `order_id`
  * matches exactly or partly, so compare the returned values (through `Resource::$raw`) when it matters.
  */
-final class SalesOrderSearch
+final readonly class SalesOrderSearch
 {
     private const TIME_FORMAT = \DateTimeInterface::RFC3339_EXTENDED;
 
     public function __construct(
-        public readonly ?int $id = null,
-        public readonly ?string $orderId = null,
-        public readonly ?string $reference = null,
-        public readonly ?string $billToEmail = null,
-        public readonly ?string $billToMobile = null,
-        public readonly ?string $shipToEmail = null,
-        public readonly ?string $shipToMobile = null,
-        public readonly ?bool $archived = null,
-        public readonly ?\DateTimeInterface $createdAtMin = null,
-        public readonly ?\DateTimeInterface $createdAtMax = null,
-        public readonly ?\DateTimeInterface $updatedAtMin = null,
-        public readonly ?\DateTimeInterface $updatedAtMax = null,
+        public ?int $id = null,
+        public ?string $orderId = null,
+        public ?string $reference = null,
+        public ?string $billToEmail = null,
+        public ?string $billToMobile = null,
+        public ?string $shipToEmail = null,
+        public ?string $shipToMobile = null,
+        public ?bool $archived = null,
+        public ?\DateTimeInterface $createdAtMin = null,
+        public ?\DateTimeInterface $createdAtMax = null,
+        public ?\DateTimeInterface $updatedAtMin = null,
+        public ?\DateTimeInterface $updatedAtMax = null,
     ) {
         Assert::nullOrGreaterThan($id, 0, 'The id must be a positive integer');
         Assert::nullOrStringNotEmpty($orderId, 'The order id must be a non-empty string');

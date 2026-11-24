@@ -1,12 +1,12 @@
 # Upgrade from 1.x to 2.x
 
-2.x is a full rewrite with a cleaner, more type-safe architecture. The PHP requirement is unchanged
-(`>=8.1`), but most of the public API changed. This guide lists every breaking change with
+2.x is a full rewrite with a cleaner, more type-safe architecture. It requires PHP 8.2 or newer
+(1.x: 8.1), and most of the public API changed. This guide lists every breaking change with
 before/after examples.
 
 ## Dependencies
 
-- `cuyz/valinor` was bumped from `^1.10` to `^2.2.2`.
+- `cuyz/valinor` was bumped from `^1.10` to `^2.6`.
 - `firebase/php-jwt: ^7.0` was **added**, for verifying incoming webhooks (`WebhookParser`).
 - `php-http/discovery` was bumped from `^1.14` to `^1.19`.
 - `psr/http-message` now also allows `^2.0`.

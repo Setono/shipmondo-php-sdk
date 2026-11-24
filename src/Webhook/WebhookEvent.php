@@ -19,7 +19,7 @@ use Setono\Shipmondo\Enum\WebhookResourceName;
  * {@see \Setono\Shipmondo\Exception\MalformedWebhookException} if Shipmondo sends an action or
  * resource the SDK does not model, rather than passing an unknown value through.
  */
-final class WebhookEvent
+final readonly class WebhookEvent
 {
     /**
      * @param WebhookAction $action the `SMD-Action` header (e.g. `create`, `cancel`, `status_update`)
@@ -34,14 +34,14 @@ final class WebhookEvent
      *                                       resource's GET endpoint
      */
     public function __construct(
-        public readonly WebhookAction $action,
-        public readonly WebhookResourceName $resourceType,
-        public readonly ?int $resourceId,
-        public readonly ?int $webhookId,
-        public readonly ?string $user,
-        public readonly string $webhookName,
-        public readonly string $url,
-        public readonly array $data,
+        public WebhookAction $action,
+        public WebhookResourceName $resourceType,
+        public ?int $resourceId,
+        public ?int $webhookId,
+        public ?string $user,
+        public string $webhookName,
+        public string $url,
+        public array $data,
     ) {
     }
 }
