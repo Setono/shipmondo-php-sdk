@@ -169,6 +169,11 @@ can reach any field the SDK doesn't model yet. Namespaces were singularised:
 | `Response\Webhooks\Webhook` | `Response\Webhook\Webhook` |
 | `Response\Collection` | `Response\Collection\Collection` |
 
+A `Webhook`'s `action` and `resourceName` are the `WebhookAction` and `WebhookResourceName` enums, or
+`null` when Shipmondo lists a value the SDK doesn't model, e.g. on another integration's webhook or
+for an action Shipmondo added later. The string Shipmondo sent stays in `$raw['action']` and
+`$raw['resource_name']`.
+
 `Collection` changes:
 
 - `first()` now returns `null` instead of `false` when empty.
