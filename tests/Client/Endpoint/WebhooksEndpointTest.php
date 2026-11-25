@@ -8,7 +8,6 @@ use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\MapperBuilder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Setono\Shipmondo\Client\Client;
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Exception\MappingException;
@@ -139,8 +138,7 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
     }
 
     /**
-     * The leniency lives on the webhook's fields, not in the SDK's mapper configuration, so it also holds for a consumer
-     * that passes a mapper builder of its own without {@see Client::configureMapperBuilder()}.
+     * The leniency lives on the webhook's fields, so it also holds for a consumer that passes a mapper builder of its own
      */
     #[Test]
     public function it_reads_an_unknown_action_as_null_also_with_a_mapper_builder_of_the_consumers_own(): void

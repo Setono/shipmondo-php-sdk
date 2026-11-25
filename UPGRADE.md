@@ -35,13 +35,19 @@ $client = new Client(
     httpClient: $httpClient,             // optional; auto-discovered if omitted
     requestFactory: $requestFactory,
     streamFactory: $streamFactory,
-    mapperBuilder: Client::configureMapperBuilder((new MapperBuilder())->withCache($cache)),
-    normalizerBuilder: Client::registerNormalizerTransformers((new NormalizerBuilder())->withCache($cache)),
+    mapperBuilder: (new MapperBuilder())->withCache($cache),
+    normalizerBuilder: (new NormalizerBuilder())->withCache($cache),
 );
 ```
 
 Removed: `setHttpClient()`, `setRequestFactory()`, `setLogger()`, `setDebug()`, `setMapperBuilder()`,
 `getMapperBuilder()`.
+
+The client applies the SDK's mapper and normalizer configuration (`Client\MapperConfigurator`,
+`Client\NormalizerConfigurator`) to any builder it is given, so pass your builder as it is.
+
+Changed in 2.0.0-rc.3: `Client::configureMapperBuilder()` and `Client::registerNormalizerTransformers()`
+were removed. Pass the builder they wrapped, e.g. `(new MapperBuilder())->withCache($cache)`, directly.
 
 ## Low-level HTTP methods
 

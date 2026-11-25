@@ -190,9 +190,8 @@ Internally this library uses the [CuyZ/Valinor](https://github.com/CuyZ/Valinor)
 for turning API responses into DTOs (and request DTOs into JSON). However, this library has some overhead and works best
 with a cache enabled.
 
-The `Client` is immutable: configure a cached mapper/normalizer and inject them through the constructor. Use the static
-helpers so the SDK's required configuration (date formats, superfluous-key handling, and the request null-stripping /
-snake_case transformers) is applied to your cached builders:
+The `Client` is immutable: pass cached builders to the constructor. The client applies the SDK's own configuration to
+any builder it is given, so a cached builder is all it takes:
 
 ```php
 <?php
@@ -206,14 +205,11 @@ require_once '../vendor/autoload.php';
 
 $cache = new FileSystemCache('path/to/cache-directory');
 
-$mapperBuilder = Client::configureMapperBuilder((new MapperBuilder())->withCache($cache));
-$normalizerBuilder = Client::registerNormalizerTransformers((new NormalizerBuilder())->withCache($cache));
-
 $client = new Client(
     'API_USERNAME',
     'API_KEY',
-    mapperBuilder: $mapperBuilder,
-    normalizerBuilder: $normalizerBuilder,
+    mapperBuilder: (new MapperBuilder())->withCache($cache),
+    normalizerBuilder: (new NormalizerBuilder())->withCache($cache),
 );
 ```
 

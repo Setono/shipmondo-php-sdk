@@ -11,12 +11,12 @@ use Nyholm\Psr7\Response;
 use Nyholm\Psr7\Stream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Setono\Shipmondo\Enum\PackingSlipFormat;
 use Setono\Shipmondo\Exception\ConnectionException;
 use Setono\Shipmondo\Exception\ForbiddenException;
 use Setono\Shipmondo\Exception\InternalServerErrorException;
 use Setono\Shipmondo\Exception\InvalidUrlException;
 use Setono\Shipmondo\Exception\MalformedResponseException;
-use Setono\Shipmondo\Exception\MappingException;
 use Setono\Shipmondo\Exception\NotFoundException;
 use Setono\Shipmondo\Exception\ResponseAwareException;
 use Setono\Shipmondo\Exception\TooManyRequestsException;
@@ -24,7 +24,15 @@ use Setono\Shipmondo\Exception\UnauthorizedException;
 use Setono\Shipmondo\Exception\UnexpectedClientErrorException;
 use Setono\Shipmondo\Exception\UnexpectedStatusCodeException;
 use Setono\Shipmondo\Exception\ValidationException;
+use Setono\Shipmondo\Request\PickupPointSearch;
+use Setono\Shipmondo\Request\SalesOrder\OrderLine;
+use Setono\Shipmondo\Request\SalesOrder\Recipient;
 use Setono\Shipmondo\Request\SalesOrder\SalesOrderRequest;
+use Setono\Shipmondo\Request\Webhook\WebhookRequest;
+use Setono\Shipmondo\Response\Collection\Collection;
+use Setono\Shipmondo\Response\SalesOrder\SalesOrder;
+use Setono\Shipmondo\Response\ShipmentTemplate\ShipmentTemplate;
+use Setono\Shipmondo\Response\Webhook\Webhook;
 use Setono\Shipmondo\ShipmondoTestCase;
 use Setono\Shipmondo\TestDouble\NetworkFailure;
 use Setono\Shipmondo\TestDouble\NonSeekableStream;
@@ -431,80 +439,124 @@ final class ClientTest extends ShipmondoTestCase
         );
     }
 
+    /**
+     * A consumer passes a mapper builder of its own, e.g. one with a cache, and the client applies the SDK's
+     * configuration to it, so the consumer doesn't have to
+     *
+     * @param \Closure(Client): mixed $fetch
+     */
     #[Test]
-    public function it_maps_with_the_injected_mapper_builder_as_given(): void
+    #[DataProvider('realResponses')]
+    public function it_maps_with_a_plain_mapper_builder_it_is_given_as_the_default_client_does(string $url, string $fixture, \Closure $fetch): void
     {
-        // A bare MapperBuilder rejects superfluous keys, so the unmodelled "foo" field fails to map.
-        // That proves the injected builder is used as-is instead of the SDK default.
-        $http = (new ScriptedHttpClient())->on(self::BASE . '/payment_gateways?id=1', self::paymentGatewayWithAnUnknownField());
-        $psr17 = new Psr17Factory();
-        $client = new Client('user', 'key', sandbox: true, httpClient: $http, requestFactory: $psr17, streamFactory: $psr17, mapperBuilder: new MapperBuilder());
+        $default = $this->client((new ScriptedHttpClient())->on($url, self::fixture($fixture)));
+        $plain = $this->client((new ScriptedHttpClient())->on($url, self::fixture($fixture)), mapperBuilder: new MapperBuilder());
 
-        $this->expectException(MappingException::class);
-
-        $client->paymentGateways()->getById(1);
+        self::assertEquals($fetch($default), $fetch($plain));
     }
 
-    #[Test]
-    public function configure_mapper_builder_applies_the_sdk_mapper_configuration_to_a_custom_builder(): void
+    /**
+     * @return \Generator<string, array{string, string, \Closure(Client): mixed}>
+     */
+    public static function realResponses(): \Generator
     {
-        $http = (new ScriptedHttpClient())->on(self::BASE . '/payment_gateways?id=1', self::paymentGatewayWithAnUnknownField());
-        $psr17 = new Psr17Factory();
-        $client = new Client(
-            'user',
-            'key',
-            sandbox: true,
-            httpClient: $http,
-            requestFactory: $psr17,
-            streamFactory: $psr17,
-            mapperBuilder: Client::configureMapperBuilder(new MapperBuilder()),
-        );
-
-        $gateway = $client->paymentGateways()->getById(1);
-
-        self::assertSame(1, $gateway->id);
-        self::assertSame('bar', $gateway->raw['foo']);
+        yield 'pickup points' => [
+            self::BASE . '/pickup_points?carrier_code=gls&country_code=DK&zipcode=9000',
+            'pickup_points.json',
+            static fn (Client $client): array => $client->pickupPoints()->search(new PickupPointSearch('gls', 'DK', '9000')),
+        ];
+        yield 'a sales order' => [
+            self::BASE . '/sales_orders/37707008',
+            'sales_order.json',
+            static fn (Client $client): SalesOrder => $client->salesOrders()->getById(37707008),
+        ];
+        yield 'a page of sales orders' => [
+            self::BASE . '/sales_orders?page=1&per_page=20',
+            'sales_orders_list.json',
+            static fn (Client $client): Collection => $client->salesOrders()->getPage(),
+        ];
+        yield 'a shipment template' => [
+            self::BASE . '/shipment_templates?id=31411785',
+            'shipment_template_by_id.json',
+            static fn (Client $client): ShipmentTemplate => $client->shipmentTemplates()->getById(31411785),
+        ];
+        yield 'a page of shipment templates' => [
+            self::BASE . '/shipment_templates?page=1&per_page=20',
+            'shipment_templates_list.json',
+            static fn (Client $client): Collection => $client->shipmentTemplates()->getPage(),
+        ];
+        yield 'a created webhook' => [
+            self::BASE . '/webhooks',
+            'webhook.json',
+            static fn (Client $client): Webhook => $client->webhooks()->create(new WebhookRequest(name: 'sdk-test')),
+        ];
+        yield 'a page of webhooks' => [
+            self::BASE . '/webhooks?page=1&per_page=20',
+            'webhooks_list.json',
+            static fn (Client $client): Collection => $client->webhooks()->getPage(),
+        ];
     }
 
+    /**
+     * Like a mapper builder, a normalizer builder of the consumer's own gets the SDK's configuration
+     */
     #[Test]
-    public function it_normalizes_with_the_injected_normalizer_builder_as_given(): void
+    public function it_serializes_with_a_plain_normalizer_builder_it_is_given_as_the_default_client_does(): void
     {
-        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
-        $psr17 = new Psr17Factory();
-        $client = new Client('user', 'key', sandbox: true, httpClient: $http, requestFactory: $psr17, streamFactory: $psr17, normalizerBuilder: new NormalizerBuilder());
-
-        $client->post('sales_orders', new SalesOrderRequest(orderId: '27000'));
-
-        // Without the SDK's Payload transformer, keys stay camelCase and nulls are kept.
-        $body = self::sentBody($http);
-        self::assertSame('27000', $body['orderId']);
-        self::assertArrayHasKey('sourceName', $body);
-        self::assertNull($body['sourceName']);
-    }
-
-    #[Test]
-    public function register_normalizer_transformers_applies_the_sdk_transformers_to_a_custom_builder(): void
-    {
-        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
-        $psr17 = new Psr17Factory();
-        $client = new Client(
-            'user',
-            'key',
-            sandbox: true,
-            httpClient: $http,
-            requestFactory: $psr17,
-            streamFactory: $psr17,
-            normalizerBuilder: Client::registerNormalizerTransformers(new NormalizerBuilder()),
-        );
-
-        $client->post('sales_orders', new SalesOrderRequest(
+        $request = new SalesOrderRequest(
             orderId: '27000',
-            orderedAt: new \DateTimeImmutable('2018-10-17T13:25:44+02:00'),
-        ));
+            orderedAt: new \DateTimeImmutable('2018-10-17T13:25:44.123+02:00'),
+            packingSlipFormat: PackingSlipFormat::A4Pdf,
+            tags: ['b2b'],
+            shipTo: new Recipient(name: 'Jane', zipcode: '9000', countryCode: 'DK', vatNo: 'DK123'),
+            orderLines: [new OrderLine(itemName: 'Widget', quantity: 2)],
+        );
+        $default = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
+        $plain = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
+
+        $this->client($default)->post('sales_orders', $request);
+        $this->client($plain, normalizerBuilder: new NormalizerBuilder())->post('sales_orders', $request);
+
+        self::assertSame((string) $default->sentRequests[0]->getBody(), (string) $plain->sentRequests[0]->getBody());
+    }
+
+    /**
+     * The client adds the SDK's configuration to a builder it is given, and keeps what the consumer configured on it
+     */
+    #[Test]
+    public function it_keeps_the_configuration_of_a_mapper_builder_it_is_given(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/payment_gateways?id=1',
+            '{"id":1,"name":" quickpay ","provider":"quick_pay","merchant_number":"67894321"}',
+        );
+        $mapperBuilder = (new MapperBuilder())->registerConverter(static fn (string $value): string => trim($value));
+
+        self::assertSame('quickpay', $this->client($http, mapperBuilder: $mapperBuilder)->paymentGateways()->getById(1)->name);
+    }
+
+    #[Test]
+    public function it_keeps_the_configuration_of_a_normalizer_builder_it_is_given(): void
+    {
+        // e.g. to send a field of Shipmondo's that the SDK doesn't model
+        $normalizerBuilder = (new NormalizerBuilder())->registerTransformer(
+            static function (OrderLine $line, callable $next): array {
+                /** @var array<string, mixed> $normalized */
+                $normalized = $next();
+
+                return $normalized + ['custom_product_data' => ['colour' => 'red']];
+            },
+        );
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
+
+        $this->client($http, normalizerBuilder: $normalizerBuilder)->post(
+            'sales_orders',
+            new SalesOrderRequest(orderLines: [new OrderLine(itemName: 'Widget')]),
+        );
 
         self::assertSame(
-            ['order_id' => '27000', 'ordered_at' => '2018-10-17T13:25:44+02:00', 'archived' => false, 'enable_customs' => false, 'use_item_weight' => true],
-            self::sentBody($http),
+            '{"archived":false,"enable_customs":false,"use_item_weight":true,"order_lines":[{"item_name":"Widget","line_type":"item","quantity":1,"custom_product_data":{"colour":"red"}}]}',
+            (string) $http->sentRequests[0]->getBody(),
         );
     }
 
@@ -640,21 +692,5 @@ final class ClientTest extends ShipmondoTestCase
             self::assertSame('boom', $e->getError());
             self::assertSame('The status code was: 422. [GET ' . self::BASE . '/sales_orders] The body was: {"error":"boom"}.', $e->getMessage());
         }
-    }
-
-    private static function paymentGatewayWithAnUnknownField(): string
-    {
-        return '{"id":1,"name":"quickpay","provider":"quick_pay","merchant_number":"67894321","foo":"bar"}';
-    }
-
-    /**
-     * @return array<array-key, mixed>
-     */
-    private static function sentBody(ScriptedHttpClient $http): array
-    {
-        $body = json_decode((string) $http->sentRequests[0]->getBody(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertIsArray($body);
-
-        return $body;
     }
 }
