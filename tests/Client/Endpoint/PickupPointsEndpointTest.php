@@ -33,6 +33,28 @@ final class PickupPointsEndpointTest extends ShipmondoTestCase
         self::assertSame('Pakkeshop: 95115', $points[0]->address2);
     }
 
+    /**
+     * Shipmondo's OpenAPI schema says the second address line is a string, but its example is `null`, and Shipmondo
+     * has sent `null` (a pickup point saved with 2.0.0-beta.1 holds such a response), so it stays nullable
+     */
+    #[Test]
+    public function it_maps_a_pickup_point_without_a_second_address_line(): void
+    {
+        $points = json_decode(self::fixture('pickup_points.json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($points);
+        self::assertIsArray($points[0]);
+        $points[0]['address2'] = null;
+
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/pickup_points?carrier_code=gls&country_code=DK&zipcode=9000',
+            json_encode($points, \JSON_THROW_ON_ERROR),
+        );
+
+        $points = $this->client($http)->pickupPoints()->search(new PickupPointSearch('gls', 'DK', '9000'));
+
+        self::assertNull($points[0]->address2);
+    }
+
     #[Test]
     public function it_omits_null_optional_query_parameters(): void
     {

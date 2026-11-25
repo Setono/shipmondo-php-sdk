@@ -204,8 +204,8 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
     }
 
     /**
-     * Only the action and the resource are read leniently: a webhook without what identifies it, or with an action that
-     * isn't even a string, still fails to map.
+     * Only the action and the resource are read leniently: a webhook without what identifies it, with an action that
+     * isn't even a string, or with a field of another type than Shipmondo documents, still fails to map.
      *
      * @param array<string, mixed> $webhook
      */
@@ -241,6 +241,12 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
 
         yield 'an action that is not a string' => [['action' => ['delete']] + $webhook];
         yield 'a resource that is not a string' => [['resource_name' => ['Orders']] + $webhook];
+
+        // The SDK doesn't cast a value of another type than Shipmondo documents
+        yield 'an id that is a numeric string' => [['id' => '1'] + $webhook];
+        yield 'active that is a number' => [['active' => 1] + $webhook];
+        yield 'a name that is a number' => [['name' => 5] + $webhook];
+        yield 'an action that is a number' => [['action' => 5] + $webhook];
     }
 
     #[Test]

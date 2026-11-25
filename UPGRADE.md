@@ -180,6 +180,12 @@ A `Webhook`'s `action` and `resourceName` are the `WebhookAction` and `WebhookRe
 for an action Shipmondo added later. The string Shipmondo sent stays in `$raw['action']` and
 `$raw['resource_name']`.
 
+Changed in 2.0.0-rc.3: response values are no longer cast to the type of their field. A value of
+another type, e.g. an id Shipmondo sent as the string `"1"`, fails to map with a `MappingException`.
+Every typed field has the type Shipmondo's OpenAPI schema documents (1.x didn't cast either).
+Two fields stay nullable where the schema says they aren't, because Shipmondo sends `null`:
+`ShipmentTemplate\Parcel::$weight` and `PickupPoint::$address2`.
+
 `Collection` changes:
 
 - `first()` now returns `null` instead of `false` when empty.

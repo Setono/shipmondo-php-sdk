@@ -25,7 +25,6 @@ final class MapperConfigurator implements MapperBuilderConfigurator
         return $builder
             // Shipmondo's keys are snake_case, the response objects' properties camelCase
             ->configureWith(new MapKeysToCamelCase())
-            ->allowScalarValueCasting()
             ->allowNonSequentialList()
             ->allowSuperfluousKeys()
             ->supportDateFormats(
