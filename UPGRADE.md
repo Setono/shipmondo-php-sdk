@@ -134,6 +134,8 @@ Notable changes:
 
 - The single `Address` is now two types: **`Recipient`** for `ship_to` / `bill_to` (uses `vat_no`,
   has `instruction`) and **`Sender`** for `sender` (uses `vat_id`).
+- The zip code is spelled **`$zipCode`** (was `$zipcode`) on `Recipient`, `Sender` and `ServicePoint`
+  (changed in 2.0.0-rc.3). Shipmondo still receives the key `zipcode`.
 - Class constants became native enums (`Setono\Shipmondo\Enum\…`): `OrderLine::LINE_TYPE_*` →
   `OrderLineType`, `Webhook::RESOURCE_*` → `WebhookResourceName`, the webhook action string →
   `WebhookAction`, the packing slip format string → `PackingSlipFormat`.
@@ -146,7 +148,7 @@ Notable changes:
 // 2.x — one named-argument call
 $client->salesOrders()->create(new SalesOrderRequest(
     orderId: '27000',
-    shipTo: new Recipient(name: 'Jane', address1: 'Main 1', city: 'CPH', zipcode: '1000', countryCode: 'DK'),
+    shipTo: new Recipient(name: 'Jane', address1: 'Main 1', city: 'CPH', zipCode: '1000', countryCode: 'DK'),
     paymentDetails: new PaymentDetails(amountIncludingVat: '125.0', vatAmount: '25.0', currencyCode: 'DKK'),
     orderLines: [new OrderLine(itemName: 'Widget', currencyCode: 'DKK', quantity: 1)],
 ));
@@ -179,6 +181,10 @@ A `Webhook`'s `action` and `resourceName` are the `WebhookAction` and `WebhookRe
 `null` when Shipmondo lists a value the SDK doesn't model, e.g. on another integration's webhook or
 for an action Shipmondo added later. The string Shipmondo sent stays in `$raw['action']` and
 `$raw['resource_name']`.
+
+`PickupPoint::$zipcode` is `$zipCode` (changed in 2.0.0-rc.3), and so is the key in its JSON
+(`jsonSerialize()` / `fromArray()`). `fromArray()` doesn't read a pickup point saved with the old key
+`zipcode`, whether by 1.x or by 2.0.0-rc.2 or earlier: save it again, or rename the key first.
 
 Changed in 2.0.0-rc.3: response values are no longer cast to the type of their field. A value of
 another type, e.g. an id Shipmondo sent as the string `"1"`, fails to map with a `MappingException`.

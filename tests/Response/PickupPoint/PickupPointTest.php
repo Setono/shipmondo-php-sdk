@@ -17,7 +17,7 @@ final class PickupPointTest extends TestCase
         $pickupPoint->raw = ['id' => '95115', 'carrier_code' => 'gls'];
 
         self::assertSame(
-            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipcode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
+            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipCode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
             json_encode($pickupPoint, \JSON_THROW_ON_ERROR),
         );
     }
@@ -55,6 +55,9 @@ final class PickupPointTest extends TestCase
      * Consumers save pickup points, e.g. the one a customer chose in a checkout, and read them back with fromArray()
      * after upgrading the SDK. A change that can't read one of these any more breaks their saved pickup points, so
      * it is a breaking change. Never edit these: add the JSON of the new version when jsonSerialize() changes.
+     *
+     * The one exception: 2.0.0-rc.3 renamed the key "zipcode" to "zipCode" in all of them, as the library wasn't in use
+     * yet (#22). Each label still names the version whose shape it keeps.
      */
     #[Test]
     #[DataProvider('savedPickupPoints')]
@@ -72,17 +75,17 @@ final class PickupPointTest extends TestCase
     public static function savedPickupPoints(): \Generator
     {
         yield 'v1: json_encode() of its public properties' => [
-            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipcode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
+            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipCode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
             self::pickupPoint(),
         ];
 
         yield 'v2.0.0-beta.1: json_encode() of its public properties, raw included' => [
-            '{"raw":{"number":"95115","id":"95115","company_name":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","address2":null,"zipcode":"9000","city":"Aalborg","country":"DK","carrier_code":"gls","opening_hours":["Monday: 08:00-20:00"]},"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipcode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00"],"address2":null}',
+            '{"raw":{"number":"95115","id":"95115","company_name":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","address2":null,"zipcode":"9000","city":"Aalborg","country":"DK","carrier_code":"gls","opening_hours":["Monday: 08:00-20:00"]},"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipCode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00"],"address2":null}',
             self::pickupPoint(address2: null, openingHours: ['Monday: 08:00-20:00']),
         ];
 
         yield 'v2.0.0-beta.2: jsonSerialize()' => [
-            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipcode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
+            '{"id":"95115","number":"95115","companyName":"Spar Kornblomstvej","name":"Spar Kornblomstvej","address":"Kornblomstvej 50","zipCode":"9000","city":"Aalborg","country":"DK","openingHours":["Monday: 08:00-20:00","Tuesday: 08:00-20:00"],"address2":"Pakkeshop: 95115"}',
             self::pickupPoint(),
         ];
     }
@@ -120,14 +123,14 @@ final class PickupPointTest extends TestCase
      */
     public static function invalidJson(): \Generator
     {
-        foreach (['id', 'number', 'companyName', 'name', 'address', 'zipcode', 'city', 'country', 'openingHours'] as $key) {
+        foreach (['id', 'number', 'companyName', 'name', 'address', 'zipCode', 'city', 'country', 'openingHours'] as $key) {
             $data = self::json();
             unset($data[$key]);
 
             yield sprintf('no %s', $key) => [$data, sprintf('The pickup point has no "%s"', $key)];
         }
 
-        foreach (['id', 'number', 'companyName', 'name', 'address', 'zipcode', 'city', 'country'] as $key) {
+        foreach (['id', 'number', 'companyName', 'name', 'address', 'zipCode', 'city', 'country'] as $key) {
             yield sprintf('%s is a number', $key) => [array_replace(self::json(), [$key => 95115]), sprintf('The pickup point\'s "%s" must be a string', $key)];
             yield sprintf('%s is null', $key) => [array_replace(self::json(), [$key => null]), sprintf('The pickup point\'s "%s" must be a string', $key)];
         }
@@ -151,7 +154,7 @@ final class PickupPointTest extends TestCase
             companyName: 'Spar Kornblomstvej',
             name: 'Spar Kornblomstvej',
             address: 'Kornblomstvej 50',
-            zipcode: '9000',
+            zipCode: '9000',
             city: 'Aalborg',
             country: 'DK',
             openingHours: $openingHours,
@@ -170,7 +173,7 @@ final class PickupPointTest extends TestCase
             'companyName' => 'Spar Kornblomstvej',
             'name' => 'Spar Kornblomstvej',
             'address' => 'Kornblomstvej 50',
-            'zipcode' => '9000',
+            'zipCode' => '9000',
             'city' => 'Aalborg',
             'country' => 'DK',
             'openingHours' => ['Monday: 08:00-20:00', 'Tuesday: 08:00-20:00'],

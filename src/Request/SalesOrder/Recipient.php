@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Request\SalesOrder;
 
+use CuyZ\Valinor\Normalizer\Configurator\NormalizeKeyTo;
 use Setono\Shipmondo\Request\Payload;
 
 /**
@@ -18,7 +19,8 @@ final class Recipient extends Payload
         public ?string $name = null,
         public ?string $address1 = null,
         public ?string $city = null,
-        public ?string $zipcode = null,
+        #[NormalizeKeyTo('zipcode')]
+        public ?string $zipCode = null,
         public ?string $countryCode = null,
         public ?string $attention = null,
         public ?string $email = null,

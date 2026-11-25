@@ -26,7 +26,7 @@ final class PickupPointsEndpointTest extends ShipmondoTestCase
         self::assertSame('95115', $points[0]->id);
         self::assertSame('95115', $points[0]->number);
         self::assertSame('Spar Kornblomstvej', $points[0]->companyName);
-        self::assertSame('9000', $points[0]->zipcode);
+        self::assertSame('9000', $points[0]->zipCode);
         self::assertSame('Aalborg', $points[0]->city);
         self::assertSame('DK', $points[0]->country);
         self::assertNotEmpty($points[0]->openingHours);

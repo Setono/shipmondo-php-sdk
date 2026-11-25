@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Response\PickupPoint;
 
+use CuyZ\Valinor\Mapper\Configurator\MapFromKey;
 use Setono\Shipmondo\Response\Resource;
 use Webmozart\Assert\Assert;
 
@@ -19,10 +20,8 @@ final class PickupPoint extends Resource implements \JsonSerializable
         public readonly string $companyName,
         public readonly string $name,
         public readonly string $address,
-        /**
-         * We need to spell this wrong because Shipmondo spelled it wrong in the response
-         */
-        public readonly string $zipcode,
+        #[MapFromKey('zipcode')]
+        public readonly string $zipCode,
         public readonly string $city,
         public readonly string $country,
         /**
@@ -37,8 +36,8 @@ final class PickupPoint extends Resource implements \JsonSerializable
      * Rebuilds a pickup point from its JSON. Keys it doesn't model, such as `raw`, are ignored, and `address2` may be
      * left out. The rebuilt pickup point has an empty {@see Resource::$raw}.
      *
-     * It reads the JSON of a pickup point saved with any earlier version of the SDK, back to 1.x, and keeps doing so
-     * within a major version: consumers save pickup points and read them back after upgrading.
+     * It reads the JSON of a pickup point saved with an earlier version of the SDK, from 2.0.0-rc.3 on, and keeps doing
+     * so within a major version: consumers save pickup points and read them back after upgrading.
      *
      * @param array<array-key, mixed> $data
      *
@@ -60,7 +59,7 @@ final class PickupPoint extends Resource implements \JsonSerializable
             companyName: self::string($data, 'companyName'),
             name: self::string($data, 'name'),
             address: self::string($data, 'address'),
-            zipcode: self::string($data, 'zipcode'),
+            zipCode: self::string($data, 'zipCode'),
             city: self::string($data, 'city'),
             country: self::string($data, 'country'),
             openingHours: $openingHours,
@@ -71,7 +70,7 @@ final class PickupPoint extends Resource implements \JsonSerializable
     /**
      * The typed fields, keyed by their property names. Never {@see Resource::$raw}
      *
-     * @return array{id: string, number: string, companyName: string, name: string, address: string, zipcode: string, city: string, country: string, openingHours: list<string>, address2: string|null}
+     * @return array{id: string, number: string, companyName: string, name: string, address: string, zipCode: string, city: string, country: string, openingHours: list<string>, address2: string|null}
      */
     public function jsonSerialize(): array
     {
@@ -81,7 +80,7 @@ final class PickupPoint extends Resource implements \JsonSerializable
             'companyName' => $this->companyName,
             'name' => $this->name,
             'address' => $this->address,
-            'zipcode' => $this->zipcode,
+            'zipCode' => $this->zipCode,
             'city' => $this->city,
             'country' => $this->country,
             'openingHours' => $this->openingHours,

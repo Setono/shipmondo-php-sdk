@@ -508,7 +508,7 @@ final class ClientTest extends ShipmondoTestCase
             orderedAt: new \DateTimeImmutable('2018-10-17T13:25:44.123+02:00'),
             packingSlipFormat: PackingSlipFormat::A4Pdf,
             tags: ['b2b'],
-            shipTo: new Recipient(name: 'Jane', zipcode: '9000', countryCode: 'DK', vatNo: 'DK123'),
+            shipTo: new Recipient(name: 'Jane', zipCode: '9000', countryCode: 'DK', vatNo: 'DK123'),
             orderLines: [new OrderLine(itemName: 'Widget', quantity: 2)],
         );
         $default = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
