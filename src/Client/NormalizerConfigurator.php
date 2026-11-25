@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Client;
 
+use CuyZ\Valinor\Normalizer\Configurator\NormalizeDateTimeFormat;
+use CuyZ\Valinor\Normalizer\Configurator\NormalizeKeysToSnakeCase;
 use CuyZ\Valinor\Normalizer\Configurator\NormalizerBuilderConfigurator;
 use CuyZ\Valinor\NormalizerBuilder;
 use Setono\Shipmondo\Request\Payload;
@@ -18,36 +20,23 @@ final class NormalizerConfigurator implements NormalizerBuilderConfigurator
     public function configureNormalizerBuilder(NormalizerBuilder $builder): NormalizerBuilder
     {
         return $builder
-            ->registerTransformer(
-                static fn (\DateTimeInterface $date): string => $date->format(\DATE_ATOM),
+            ->configureWith(
+                new NormalizeDateTimeFormat(\DATE_ATOM),
+                new NormalizeKeysToSnakeCase(),
             )
             ->registerTransformer(
                 /**
-                 * @return array<string, mixed>
+                 * Leaves out `null` and `[]`, so an optional property that isn't set, or an empty list, isn't sent
+                 *
+                 * @return array<array-key, mixed>
                  */
                 static function (Payload $payload, callable $next): array {
-                    /** @var array<string, mixed> $normalized */
+                    /** @var array<array-key, mixed> $normalized */
                     $normalized = $next();
 
-                    $result = [];
-                    foreach ($normalized as $key => $value) {
-                        // Strip both `null` AND `[]` so optional properties and empty collections
-                        // are omitted from the JSON rather than serialized as `null` / `[]`.
-                        if (null === $value || [] === $value) {
-                            continue;
-                        }
-
-                        $result[self::camelToSnake($key)] = $value;
-                    }
-
-                    return $result;
+                    return array_filter($normalized, static fn (mixed $value): bool => null !== $value && [] !== $value);
                 },
             )
         ;
-    }
-
-    private static function camelToSnake(string $key): string
-    {
-        return strtolower(preg_replace('/[A-Z]/', '_$0', $key) ?? $key);
     }
 }
