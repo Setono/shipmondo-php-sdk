@@ -70,3 +70,19 @@ Separate from the API-management `WebhooksEndpoint` (subscription CRUD), `Webhoo
 - Drive endpoints with `ScriptedHttpClient` (fake PSR-18 keyed by full URL, records sent requests + supports response headers; `fail()` makes a URL throw a PSR-18 network exception) — no mocking framework, no endpoint interfaces.
 - PHPStan max is strict: avoid `assertInstanceOf` on already-narrowed types, and `assertIsArray()` before indexing into `json_decode`/`$raw` (both are `mixed`-valued).
 - **`LiveClientTest`** hits the real API and is skipped unless `SHIPMONDO_LIVE` is `1`/`true`, reading `SHIPMONDO_USERNAME` / `SHIPMONDO_API_KEY` from the env, and `SHIPMONDO_SANDBOX` (`1`/`true`) to target the sandbox — sandbox credentials get a 401 from production. A local `phpunit.xml` (gitignored; `phpunit.xml.dist` is the committed one) can hold them as `<env>` entries; a variable already set in the shell wins over it. Never commit credentials; never enable in CI.
+
+## Agent skills
+
+- When grilling (`/mattpocock-skills:grilling`, `/mattpocock-skills:grill-me`, `/mattpocock-skills:grill-with-docs`, and grilling inside other skills), ask via the `AskUserQuestion` tool instead of as plain chat text. The skills ask in chat on purpose and leave this to the project's CLAUDE.md ([mattpocock/skills: native question tool](https://github.com/mattpocock/skills/blob/main/.out-of-scope/native-question-tool.md)).
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues on `Setono/shipmondo-php-sdk`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels are used as-is (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root, created only when a term or decision gets settled. See `docs/agents/domain.md`.
