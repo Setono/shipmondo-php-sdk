@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\Shipmondo\Client\Endpoint;
 
 use CuyZ\Valinor\Mapper\MappingError;
-use CuyZ\Valinor\Mapper\Source\Source;
 use CuyZ\Valinor\MapperBuilder;
 use Setono\Shipmondo\Client\ClientInterface;
 use Setono\Shipmondo\Exception\MappingException;
@@ -23,10 +22,10 @@ abstract class Endpoint
      * Map a single decoded JSON object into a typed {@see Resource} and stamp `$raw` with the
      * untouched payload.
      *
-     * Shipmondo responses are snake_case while the DTOs use camelCase properties, so the source is
-     * run through Valinor's {@see Source::camelCaseKeys()} before mapping. `$raw` keeps the original
-     * snake_case body so consumers can reach any field the SDK does not model (matching the keys in
-     * the Shipmondo API docs).
+     * The mapper builder carries the SDK's {@see \Setono\Shipmondo\Client\MapperConfigurator}, which
+     * maps Shipmondo's snake_case keys to the camelCase properties, so an error names the key as
+     * Shipmondo sent it. `$raw` keeps the original snake_case body so consumers can reach any field
+     * the SDK does not model (matching the keys in the Shipmondo API docs).
      *
      * Converts Valinor's `MappingError` (a 2xx body that decoded as JSON but didn't fit the DTO)
      * into the SDK's typed {@see MappingException}, preserving the original as `$previous`.
@@ -41,7 +40,7 @@ abstract class Endpoint
     protected function mapItem(string $signature, array $data): Resource
     {
         try {
-            $item = $this->mapperBuilder->mapper()->map($signature, Source::array($data)->camelCaseKeys());
+            $item = $this->mapperBuilder->mapper()->map($signature, $data);
 
             $item->raw = $data;
 

@@ -65,6 +65,12 @@ final class Client implements ClientInterface
 
     private readonly NormalizerBuilder $normalizerBuilder;
 
+    /**
+     * @param MapperBuilder|null $mapperBuilder a builder of your own, e.g. `(new MapperBuilder())->withCache($cache)`.
+     *                                          The client applies the SDK's {@see MapperConfigurator} to it
+     * @param NormalizerBuilder|null $normalizerBuilder a builder of your own, e.g. one with a cache. The client applies
+     *                                                  the SDK's {@see NormalizerConfigurator} to it
+     */
     public function __construct(
         private readonly string $apiUser,
         private readonly string $apiKey,
@@ -79,8 +85,8 @@ final class Client implements ClientInterface
         $this->httpClient = $httpClient ?? Psr18ClientDiscovery::find();
         $this->requestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
         $this->streamFactory = $streamFactory ?? Psr17FactoryDiscovery::findStreamFactory();
-        $this->mapperBuilder = $mapperBuilder ?? self::defaultMapperBuilder();
-        $this->normalizerBuilder = $normalizerBuilder ?? self::defaultNormalizerBuilder();
+        $this->mapperBuilder = ($mapperBuilder ?? new MapperBuilder())->configureWith(new MapperConfigurator());
+        $this->normalizerBuilder = ($normalizerBuilder ?? new NormalizerBuilder())->configureWith(new NormalizerConfigurator());
     }
 
     public function getLastRequest(): ?RequestInterface
@@ -207,85 +213,6 @@ final class Client implements ClientInterface
     }
 
     /**
-     * Apply the SDK's full mapper configuration to a consumer-supplied {@see MapperBuilder}. This
-     * is the entry point consumers SHOULD use when wiring a custom builder (e.g. with a
-     * `FileSystemCache` for production):
-     *
-     * ```
-     * $custom = Client::configureMapperBuilder((new MapperBuilder())->withCache($cache));
-     * $client = new Client('API_USER', 'API_KEY', mapperBuilder: $custom);
-     * ```
-     *
-     * Registers no converters: `Resource::$raw` is stamped by a plain assignment in
-     * {@see \Setono\Shipmondo\Client\Endpoint\Endpoint::mapItem()}, and a field-specific
-     * conversion is an attribute on the field (e.g. {@see \Setono\Shipmondo\Response\NullWhenUnknown}),
-     * which Valinor applies whichever builder is used.
-     */
-    public static function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
-    {
-        return $builder
-            ->allowScalarValueCasting()
-            ->allowNonSequentialList()
-            ->allowSuperfluousKeys()
-            ->supportDateFormats(
-                'Y-m-d\TH:i:sP', // e.g. "2018-10-17T13:25:44Z" (P accepts the Z suffix)
-                'Y-m-d\TH:i:s.uP', // e.g. "2018-10-17T13:25:44.557Z" / "...+02:00"
-            )
-        ;
-    }
-
-    /**
-     * Append the SDK's `Payload` normalizer transformer (null-skipping + snake_case keys) and the
-     * `\DateTimeInterface` → DATE_ATOM transformer to a consumer-supplied {@see NormalizerBuilder}.
-     * Use this when wiring a custom builder (e.g. with a cache):
-     *
-     * ```
-     * $custom = Client::registerNormalizerTransformers((new NormalizerBuilder())->withCache($cache));
-     * $client = new Client('API_USER', 'API_KEY', normalizerBuilder: $custom);
-     * ```
-     */
-    public static function registerNormalizerTransformers(NormalizerBuilder $builder): NormalizerBuilder
-    {
-        return $builder
-            ->registerTransformer(
-                static fn (\DateTimeInterface $date): string => $date->format(\DATE_ATOM),
-            )
-            ->registerTransformer(
-                /**
-                 * @return array<string, mixed>
-                 */
-                static function (Payload $payload, callable $next): array {
-                    /** @var array<string, mixed> $normalized */
-                    $normalized = $next();
-
-                    $result = [];
-                    foreach ($normalized as $key => $value) {
-                        // Strip both `null` AND `[]` so optional properties and empty collections
-                        // are omitted from the JSON rather than serialized as `null` / `[]`.
-                        if (null === $value || [] === $value) {
-                            continue;
-                        }
-
-                        $result[self::camelToSnake($key)] = $value;
-                    }
-
-                    return $result;
-                },
-            )
-        ;
-    }
-
-    private static function defaultMapperBuilder(): MapperBuilder
-    {
-        return self::configureMapperBuilder(new MapperBuilder());
-    }
-
-    private static function defaultNormalizerBuilder(): NormalizerBuilder
-    {
-        return self::registerNormalizerTransformers(new NormalizerBuilder());
-    }
-
-    /**
      * @param array<string, scalar|null> $query
      */
     private function resolveUrl(string $uri, array $query = []): string
@@ -338,11 +265,6 @@ final class Client implements ClientInterface
     private function userAgent(): string
     {
         return 'Setono-Shipmondo-PHP (+https://github.com/Setono/shipmondo-php-sdk)';
-    }
-
-    private static function camelToSnake(string $key): string
-    {
-        return strtolower(preg_replace('/[A-Z]/', '_$0', $key) ?? $key);
     }
 
     /**

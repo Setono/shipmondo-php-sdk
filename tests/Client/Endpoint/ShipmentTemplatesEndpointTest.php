@@ -38,6 +38,26 @@ final class ShipmentTemplatesEndpointTest extends ShipmondoTestCase
         self::assertSame(1000, $template->getTotalSupportedWeight());
     }
 
+    /**
+     * Shipmondo's OpenAPI schema says a parcel's weight is a required integer, but the sandbox returned `null` for 10
+     * of its 22 shipment templates' parcels (2026-11-25), so the weight stays nullable
+     */
+    #[Test]
+    public function it_maps_a_parcel_without_a_weight(): void
+    {
+        $template = json_decode(self::fixture('shipment_template_by_id.json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($template);
+        self::assertIsArray($template[0]);
+        $template[0]['parcels'] = [['quantity' => 1, 'weight' => null]];
+
+        $http = (new ScriptedHttpClient())->on(self::BASE . '/shipment_templates?id=31411785', json_encode($template, \JSON_THROW_ON_ERROR));
+
+        $template = $this->client($http)->shipmentTemplates()->getById(31411785);
+
+        self::assertNull($template->parcels[0]->weight);
+        self::assertSame(\PHP_INT_MAX, $template->getTotalSupportedWeight());
+    }
+
     #[Test]
     public function it_fetches_a_template_by_id_via_query_param(): void
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\Shipmondo\Request\SalesOrder;
 
+use CuyZ\Valinor\Normalizer\Configurator\NormalizeKeyTo;
 use Setono\Shipmondo\Request\Payload;
 use Setono\Shipmondo\Response\PickupPoint\PickupPoint;
 
@@ -17,7 +18,8 @@ final class ServicePoint extends Payload
         public ?string $id = null,
         public ?string $name = null,
         public ?string $address1 = null,
-        public ?string $zipcode = null,
+        #[NormalizeKeyTo('zipcode')]
+        public ?string $zipCode = null,
         public ?string $city = null,
         public ?string $countryCode = null,
         public ?string $address2 = null,
@@ -35,7 +37,7 @@ final class ServicePoint extends Payload
             id: $pickupPoint->id,
             name: $pickupPoint->name,
             address1: $pickupPoint->address,
-            zipcode: $pickupPoint->zipcode,
+            zipCode: $pickupPoint->zipCode,
             city: $pickupPoint->city,
             countryCode: $pickupPoint->country,
             address2: $pickupPoint->address2,

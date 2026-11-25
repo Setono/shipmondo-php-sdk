@@ -125,7 +125,7 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
             orderId: '27000',
             orderedAt: new \DateTimeImmutable('2018-10-17T13:25:44+00:00'),
             packingSlipFormat: PackingSlipFormat::A4Pdf,
-            shipTo: new Recipient(name: 'John', address1: 'Main 1', city: 'CPH', zipcode: '1000', countryCode: 'DK', vatNo: 'DK123'),
+            shipTo: new Recipient(name: 'John', address1: 'Main 1', city: 'CPH', zipCode: '1000', countryCode: 'DK', vatNo: 'DK123'),
             orderLines: [new OrderLine(itemName: 'Widget', currencyCode: 'DKK', quantity: 2)],
             paymentDetails: new PaymentDetails(amountIncludingVat: '2000.0', vatAmount: '400.0', currencyCode: 'DKK'),
         ));
@@ -269,8 +269,8 @@ final class SalesOrdersEndpointTest extends ShipmondoTestCase
         $http = (new ScriptedHttpClient())->on(self::BASE . '/sales_orders', '{"id":1}');
 
         $request = new SalesOrderRequest(orderId: '27000');
-        $request->sender = new Sender(name: 'ACME', address1: 'Depot 1', city: 'CPH', zipcode: '1000', countryCode: 'DK', vatId: 'DK999');
-        $request->servicePoint = new ServicePoint(id: '95115', name: 'Spar', zipcode: '9000', city: 'Aalborg', countryCode: 'DK', carrierCode: 'gls');
+        $request->sender = new Sender(name: 'ACME', address1: 'Depot 1', city: 'CPH', zipCode: '1000', countryCode: 'DK', vatId: 'DK999');
+        $request->servicePoint = new ServicePoint(id: '95115', name: 'Spar', zipCode: '9000', city: 'Aalborg', countryCode: 'DK', carrierCode: 'gls');
 
         $this->client($http)->salesOrders()->create($request);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\Shipmondo;
 
 use CuyZ\Valinor\MapperBuilder;
+use CuyZ\Valinor\NormalizerBuilder;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Setono\Shipmondo\Client\Client;
@@ -14,11 +15,23 @@ abstract class ShipmondoTestCase extends TestCase
 {
     protected const BASE = 'https://sandbox.shipmondo.com/api/public/v3';
 
-    protected function client(ScriptedHttpClient $http, ?MapperBuilder $mapperBuilder = null): Client
-    {
+    protected function client(
+        ScriptedHttpClient $http,
+        ?MapperBuilder $mapperBuilder = null,
+        ?NormalizerBuilder $normalizerBuilder = null,
+    ): Client {
         $psr17 = new Psr17Factory();
 
-        return new Client('user', 'key', sandbox: true, httpClient: $http, requestFactory: $psr17, streamFactory: $psr17, mapperBuilder: $mapperBuilder);
+        return new Client(
+            'user',
+            'key',
+            sandbox: true,
+            httpClient: $http,
+            requestFactory: $psr17,
+            streamFactory: $psr17,
+            mapperBuilder: $mapperBuilder,
+            normalizerBuilder: $normalizerBuilder,
+        );
     }
 
     /**

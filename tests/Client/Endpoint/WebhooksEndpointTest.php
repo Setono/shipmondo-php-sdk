@@ -8,7 +8,6 @@ use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\MapperBuilder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Setono\Shipmondo\Client\Client;
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Exception\MappingException;
@@ -112,6 +111,27 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
     }
 
     /**
+     * The key as Shipmondo sends it, so it can be looked up in the response and in Shipmondo's documentation
+     */
+    #[Test]
+    public function it_names_a_field_it_cannot_map_by_shipmondos_key(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/webhooks?page=1&per_page=20',
+            '[{"id":1,"endpoint":"https://a","active":true,"name":"a","action":"create","resource_name":["Orders"]}]',
+            200,
+            ['X-Total-Pages' => '1'],
+        );
+
+        try {
+            $this->client($http)->webhooks()->getPage();
+            self::fail('Expected a MappingException');
+        } catch (MappingException $e) {
+            self::assertStringContainsString('An error occurred at path resource_name: ', $e->getMessage());
+        }
+    }
+
+    /**
      * Shipmondo lists every webhook on the account, also other integrations' and ones made in its UI, so a webhook
      * whose action or resource the SDK doesn't model must not make the page unreadable.
      */
@@ -139,8 +159,7 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
     }
 
     /**
-     * The leniency lives on the webhook's fields, not in the SDK's mapper configuration, so it also holds for a consumer
-     * that passes a mapper builder of its own without {@see Client::configureMapperBuilder()}.
+     * The leniency lives on the webhook's fields, so it also holds for a consumer that passes a mapper builder of its own
      */
     #[Test]
     public function it_reads_an_unknown_action_as_null_also_with_a_mapper_builder_of_the_consumers_own(): void
@@ -185,8 +204,8 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
     }
 
     /**
-     * Only the action and the resource are read leniently: a webhook without what identifies it, or with an action that
-     * isn't even a string, still fails to map.
+     * Only the action and the resource are read leniently: a webhook without what identifies it, with an action that
+     * isn't even a string, or with a field of another type than Shipmondo documents, still fails to map.
      *
      * @param array<string, mixed> $webhook
      */
@@ -222,6 +241,12 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
 
         yield 'an action that is not a string' => [['action' => ['delete']] + $webhook];
         yield 'a resource that is not a string' => [['resource_name' => ['Orders']] + $webhook];
+
+        // The SDK doesn't cast a value of another type than Shipmondo documents
+        yield 'an id that is a numeric string' => [['id' => '1'] + $webhook];
+        yield 'active that is a number' => [['active' => 1] + $webhook];
+        yield 'a name that is a number' => [['name' => 5] + $webhook];
+        yield 'an action that is a number' => [['action' => 5] + $webhook];
     }
 
     #[Test]
