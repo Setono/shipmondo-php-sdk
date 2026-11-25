@@ -111,6 +111,27 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
     }
 
     /**
+     * The key as Shipmondo sends it, so it can be looked up in the response and in Shipmondo's documentation
+     */
+    #[Test]
+    public function it_names_a_field_it_cannot_map_by_shipmondos_key(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/webhooks?page=1&per_page=20',
+            '[{"id":1,"endpoint":"https://a","active":true,"name":"a","action":"create","resource_name":["Orders"]}]',
+            200,
+            ['X-Total-Pages' => '1'],
+        );
+
+        try {
+            $this->client($http)->webhooks()->getPage();
+            self::fail('Expected a MappingException');
+        } catch (MappingException $e) {
+            self::assertStringContainsString('An error occurred at path resource_name: ', $e->getMessage());
+        }
+    }
+
+    /**
      * Shipmondo lists every webhook on the account, also other integrations' and ones made in its UI, so a webhook
      * whose action or resource the SDK doesn't model must not make the page unreadable.
      */
