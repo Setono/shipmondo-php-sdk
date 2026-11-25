@@ -20,8 +20,8 @@ return static function (RectorConfig $rectorConfig): void {
 
     $rectorConfig->skip([
         // Entry-point Response DTOs stamp `$raw` after Valinor mapping, so the inherited
-        // property must stay writable; request `Payload` DTOs are deliberately mutable for the
-        // fromResponse() read-modify-write flow.
+        // property must stay writable; request `Payload` DTOs are deliberately mutable, so callers
+        // can build them incrementally.
         ReadOnlyPropertyRector::class => [
             __DIR__ . '/src/Response',
             __DIR__ . '/src/Request',

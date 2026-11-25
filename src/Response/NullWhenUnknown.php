@@ -30,10 +30,9 @@ final readonly class NullWhenUnknown
     }
 
     /**
-     * A value the enum knows is mapped as usual, through `$next`. Valinor applies a converter only
-     * when its return type fits the field's type, so for Valinor the return type is a template,
-     * inferred from the field, e.g. `?WebhookAction`. On a field that isn't nullable, an unknown
-     * value still fails to map
+     * Valinor applies a converter only when its return type fits the field's type, so for Valinor
+     * the return type is a template, inferred from the field, e.g. `?WebhookAction`. On a field that
+     * isn't nullable, an unknown value still fails to map.
      *
      * @template T of \BackedEnum|null
      *

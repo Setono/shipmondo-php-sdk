@@ -6,7 +6,6 @@ namespace Setono\Shipmondo\Client\Endpoint;
 
 use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\MapperBuilder;
-use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Setono\Shipmondo\Client\Client;
@@ -114,7 +113,7 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
 
     /**
      * Shipmondo lists every webhook on the account, also other integrations' and ones made in its UI, so a webhook
-     * whose action or resource the SDK doesn't model must not make the page unreadable
+     * whose action or resource the SDK doesn't model must not make the page unreadable.
      */
     #[Test]
     public function it_reads_a_webhook_whose_action_or_resource_the_sdk_does_not_know_with_null_in_its_place(): void
@@ -134,7 +133,6 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
             [[1, WebhookAction::Delete, WebhookResourceName::Orders], [2, null, WebhookResourceName::Orders], [3, WebhookAction::Create, null]],
             array_map(static fn (Webhook $webhook): array => [$webhook->id, $webhook->action, $webhook->resourceName], $webhooks),
         );
-        // the original strings stay reachable
         self::assertSame('an_action_added_later', $webhooks[1]->raw['action']);
         self::assertSame('A resource added later', $webhooks[2]->raw['resource_name']);
         self::assertSame(['https://c', false, 'unknown resource'], [$webhooks[2]->endpoint, $webhooks[2]->active, $webhooks[2]->name]);
@@ -142,7 +140,7 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
 
     /**
      * The leniency lives on the webhook's fields, not in the SDK's mapper configuration, so it also holds for a consumer
-     * that passes a mapper builder of its own without {@see Client::configureMapperBuilder()}
+     * that passes a mapper builder of its own without {@see Client::configureMapperBuilder()}.
      */
     #[Test]
     public function it_reads_an_unknown_action_as_null_also_with_a_mapper_builder_of_the_consumers_own(): void
@@ -153,40 +151,42 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
             200,
             ['X-Total-Pages' => '1'],
         );
-        $psr17 = new Psr17Factory();
-        $client = new Client('user', 'key', sandbox: true, httpClient: $http, requestFactory: $psr17, streamFactory: $psr17, mapperBuilder: new MapperBuilder());
 
-        $webhook = $client->webhooks()->getPage()->items[0];
+        $webhook = $this->client($http, new MapperBuilder())->webhooks()->getPage()->items[0];
 
         self::assertNull($webhook->action);
         self::assertSame(WebhookResourceName::Orders, $webhook->resourceName);
     }
 
     #[Test]
-    public function it_paginates_and_deletes_past_a_webhook_whose_action_the_sdk_does_not_know(): void
+    public function it_paginates_and_deletes_past_webhooks_whose_action_or_resource_the_sdk_does_not_know(): void
     {
         $http = (new ScriptedHttpClient())
             ->on(
                 self::BASE . '/webhooks?page=1&per_page=20',
                 '[{"id":1,"endpoint":"https://a","active":true,"name":"another integration","action":"an_action_added_later","resource_name":"Orders"},'
-                . '{"id":2,"endpoint":"https://b","active":true,"name":"drop","action":"create","resource_name":"Orders"}]',
+                . '{"id":2,"endpoint":"https://b","active":true,"name":"yet another","action":"create","resource_name":"A resource added later"},'
+                . '{"id":3,"endpoint":"https://c","active":true,"name":"drop","action":"create","resource_name":"Orders"}]',
                 200,
                 ['X-Total-Pages' => '1'],
             )
-            ->on(self::BASE . '/webhooks/2', '')
+            ->on(self::BASE . '/webhooks/3', '')
         ;
 
         $webhooks = $this->client($http)->webhooks();
-        self::assertSame([1, 2], array_map(static fn (Webhook $webhook): int => $webhook->id, iterator_to_array($webhooks->paginate(), false)));
+        self::assertSame([1, 2, 3], array_map(static fn (Webhook $webhook): int => $webhook->id, iterator_to_array($webhooks->paginate(), false)));
 
         $webhooks->deleteAll(static fn (Webhook $webhook): bool => 'drop' === $webhook->name);
 
-        self::assertSame(['GET', 'GET', 'DELETE'], array_map(static fn ($request): string => $request->getMethod(), $http->sentRequests));
+        self::assertSame(
+            [['GET', self::BASE . '/webhooks?page=1&per_page=20'], ['GET', self::BASE . '/webhooks?page=1&per_page=20'], ['DELETE', self::BASE . '/webhooks/3']],
+            array_map(static fn ($request): array => [$request->getMethod(), (string) $request->getUri()], $http->sentRequests),
+        );
     }
 
     /**
      * Only the action and the resource are read leniently: a webhook without what identifies it, or with an action that
-     * isn't even a string, still fails to map
+     * isn't even a string, still fails to map.
      *
      * @param array<string, mixed> $webhook
      */
