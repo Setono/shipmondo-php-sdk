@@ -13,8 +13,8 @@ namespace Setono\Shipmondo\Response;
  * haven't yet typed.
  *
  * The class itself is NOT `readonly` (because `$raw` is mutable until the endpoint sets it).
- * Subclasses should be `final class` (not `final readonly class`) — `rector.php` excludes
- * `src/Response` from `ReadOnlyPropertyRector` to keep this invariant.
+ * Subclasses are `final class` with `public readonly` properties: PHP doesn't let a readonly class
+ * extend a non-readonly one.
  */
 abstract class Resource
 {

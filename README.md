@@ -167,6 +167,10 @@ doesn't model, `parse()` throws `MalformedWebhookException` rather than passing 
 through. (`WebhookResourceName::actions()` lists the actions valid for a resource, and
 `WebhooksEndpoint::create()` rejects an invalid resource/action pair before sending.)
 
+Listing webhooks is lenient instead. Shipmondo's webhook list holds every webhook on the account, also other
+integrations', so a `Webhook` from `webhooks()->getPage()`, `paginate()` or `deleteAll()` whose action or resource the
+SDK doesn't model has `null` in `action` / `resourceName`, and the original string in `$raw`.
+
 If you are not on PSR-7, pass the raw body and headers instead:
 
 ```php

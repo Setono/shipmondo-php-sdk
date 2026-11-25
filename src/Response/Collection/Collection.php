@@ -16,17 +16,17 @@ namespace Setono\Shipmondo\Response\Collection;
  * @template T
  * @implements \IteratorAggregate<int, T>
  */
-final class Collection implements \IteratorAggregate, \Countable
+final readonly class Collection implements \IteratorAggregate, \Countable
 {
     /**
      * @param list<T> $items
      */
     public function __construct(
-        public readonly array $items,
-        public readonly int $page = 1,
-        public readonly int $pageSize = 0,
-        public readonly int $totalCount = 0,
-        public readonly int $totalPages = 1,
+        public array $items,
+        public int $page = 1,
+        public int $pageSize = 0,
+        public int $totalCount = 0,
+        public int $totalPages = 1,
     ) {
     }
 

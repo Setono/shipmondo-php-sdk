@@ -14,9 +14,9 @@ use Psr\Http\Message\StreamInterface;
  * Parameters are deliberately untyped so the class satisfies both psr/http-message v1 (untyped)
  * and v2 (typed) — the `--prefer-lowest` CI matrix resolves v1.
  */
-final class UnreadableStream implements StreamInterface
+final readonly class UnreadableStream implements StreamInterface
 {
-    public function __construct(private readonly string $error = 'Unable to read stream contents: Idle timeout reached')
+    public function __construct(private string $error = 'Unable to read stream contents: Idle timeout reached')
     {
     }
 

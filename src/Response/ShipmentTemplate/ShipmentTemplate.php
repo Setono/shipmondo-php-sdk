@@ -28,9 +28,7 @@ final class ShipmentTemplate extends Resource
                 return \PHP_INT_MAX;
             }
 
-            if (null === $totalWeight) {
-                $totalWeight = 0;
-            }
+            $totalWeight ??= 0;
 
             $totalWeight += $parcel->quantity * $parcel->weight;
         }

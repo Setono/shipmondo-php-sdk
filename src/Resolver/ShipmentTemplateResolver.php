@@ -25,9 +25,7 @@ final class ShipmentTemplateResolver
                 continue;
             }
 
-            if (null === $supportedShipmentTemplate) {
-                $supportedShipmentTemplate = $shipmentTemplate;
-            }
+            $supportedShipmentTemplate ??= $shipmentTemplate;
 
             $newWeightDiff = abs($shipmentTemplate->getTotalSupportedWeight() - $shipment->weight);
             if ($newWeightDiff < $weightDiff) {

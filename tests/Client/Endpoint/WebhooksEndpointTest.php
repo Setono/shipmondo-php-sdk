@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Setono\Shipmondo\Client\Endpoint;
 
 use CuyZ\Valinor\Mapper\MappingError;
+use CuyZ\Valinor\MapperBuilder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Setono\Shipmondo\Client\Client;
 use Setono\Shipmondo\Enum\WebhookAction;
 use Setono\Shipmondo\Enum\WebhookResourceName;
 use Setono\Shipmondo\Exception\MappingException;
@@ -107,6 +109,119 @@ final class WebhooksEndpointTest extends ShipmondoTestCase
             self::assertInstanceOf(MappingError::class, $e->getPrevious());
             self::assertSame(200, $e->getResponse()->getStatusCode());
         }
+    }
+
+    /**
+     * Shipmondo lists every webhook on the account, also other integrations' and ones made in its UI, so a webhook
+     * whose action or resource the SDK doesn't model must not make the page unreadable.
+     */
+    #[Test]
+    public function it_reads_a_webhook_whose_action_or_resource_the_sdk_does_not_know_with_null_in_its_place(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/webhooks?page=1&per_page=20',
+            '[{"id":1,"endpoint":"https://a","active":true,"name":"known","action":"delete","resource_name":"Orders"},'
+            . '{"id":2,"endpoint":"https://b","active":true,"name":"unknown action","action":"an_action_added_later","resource_name":"Orders"},'
+            . '{"id":3,"endpoint":"https://c","active":false,"name":"unknown resource","action":"create","resource_name":"A resource added later"}]',
+            200,
+            ['X-Total-Pages' => '1'],
+        );
+
+        $webhooks = $this->client($http)->webhooks()->getPage()->items;
+
+        self::assertSame(
+            [[1, WebhookAction::Delete, WebhookResourceName::Orders], [2, null, WebhookResourceName::Orders], [3, WebhookAction::Create, null]],
+            array_map(static fn (Webhook $webhook): array => [$webhook->id, $webhook->action, $webhook->resourceName], $webhooks),
+        );
+        self::assertSame('an_action_added_later', $webhooks[1]->raw['action']);
+        self::assertSame('A resource added later', $webhooks[2]->raw['resource_name']);
+        self::assertSame(['https://c', false, 'unknown resource'], [$webhooks[2]->endpoint, $webhooks[2]->active, $webhooks[2]->name]);
+    }
+
+    /**
+     * The leniency lives on the webhook's fields, not in the SDK's mapper configuration, so it also holds for a consumer
+     * that passes a mapper builder of its own without {@see Client::configureMapperBuilder()}.
+     */
+    #[Test]
+    public function it_reads_an_unknown_action_as_null_also_with_a_mapper_builder_of_the_consumers_own(): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/webhooks?page=1&per_page=20',
+            '[{"id":2,"endpoint":"https://b","active":true,"name":"unknown action","action":"an_action_added_later","resource_name":"Orders"}]',
+            200,
+            ['X-Total-Pages' => '1'],
+        );
+
+        $webhook = $this->client($http, new MapperBuilder())->webhooks()->getPage()->items[0];
+
+        self::assertNull($webhook->action);
+        self::assertSame(WebhookResourceName::Orders, $webhook->resourceName);
+    }
+
+    #[Test]
+    public function it_paginates_and_deletes_past_webhooks_whose_action_or_resource_the_sdk_does_not_know(): void
+    {
+        $http = (new ScriptedHttpClient())
+            ->on(
+                self::BASE . '/webhooks?page=1&per_page=20',
+                '[{"id":1,"endpoint":"https://a","active":true,"name":"another integration","action":"an_action_added_later","resource_name":"Orders"},'
+                . '{"id":2,"endpoint":"https://b","active":true,"name":"yet another","action":"create","resource_name":"A resource added later"},'
+                . '{"id":3,"endpoint":"https://c","active":true,"name":"drop","action":"create","resource_name":"Orders"}]',
+                200,
+                ['X-Total-Pages' => '1'],
+            )
+            ->on(self::BASE . '/webhooks/3', '')
+        ;
+
+        $webhooks = $this->client($http)->webhooks();
+        self::assertSame([1, 2, 3], array_map(static fn (Webhook $webhook): int => $webhook->id, iterator_to_array($webhooks->paginate(), false)));
+
+        $webhooks->deleteAll(static fn (Webhook $webhook): bool => 'drop' === $webhook->name);
+
+        self::assertSame(
+            [['GET', self::BASE . '/webhooks?page=1&per_page=20'], ['GET', self::BASE . '/webhooks?page=1&per_page=20'], ['DELETE', self::BASE . '/webhooks/3']],
+            array_map(static fn ($request): array => [$request->getMethod(), (string) $request->getUri()], $http->sentRequests),
+        );
+    }
+
+    /**
+     * Only the action and the resource are read leniently: a webhook without what identifies it, or with an action that
+     * isn't even a string, still fails to map.
+     *
+     * @param array<string, mixed> $webhook
+     */
+    #[Test]
+    #[DataProvider('unreadableWebhooks')]
+    public function it_still_fails_to_map_a_webhook_it_cannot_read(array $webhook): void
+    {
+        $http = (new ScriptedHttpClient())->on(
+            self::BASE . '/webhooks?page=1&per_page=20',
+            json_encode([$webhook], \JSON_THROW_ON_ERROR),
+            200,
+            ['X-Total-Pages' => '1'],
+        );
+
+        $this->expectException(MappingException::class);
+
+        $this->client($http)->webhooks()->getPage();
+    }
+
+    /**
+     * @return \Generator<string, array{array<string, mixed>}>
+     */
+    public static function unreadableWebhooks(): \Generator
+    {
+        $webhook = ['id' => 1, 'endpoint' => 'https://a', 'active' => true, 'name' => 'a', 'action' => 'an_action_added_later', 'resource_name' => 'A resource added later'];
+
+        foreach (['id', 'endpoint', 'active', 'name'] as $field) {
+            $without = $webhook;
+            unset($without[$field]);
+
+            yield sprintf('without %s', $field) => [$without];
+        }
+
+        yield 'an action that is not a string' => [['action' => ['delete']] + $webhook];
+        yield 'a resource that is not a string' => [['resource_name' => ['Orders']] + $webhook];
     }
 
     #[Test]
